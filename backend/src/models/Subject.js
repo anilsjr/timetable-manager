@@ -1,0 +1,18 @@
+import mongoose from 'mongoose';
+
+const subjectSchema = new mongoose.Schema(
+  {
+    full_name: { type: String, required: true },
+    short_name: { type: String, required: true },
+    code: { type: String, required: true, unique: true },
+    weekly_frequency: { type: Number, required: true },
+    duration: { type: Number, default: 50 },
+  },
+  { timestamps: true }
+);
+
+subjectSchema.index({ code: 1 }, { unique: true });
+subjectSchema.index({ short_name: 1 });
+
+const Subject = mongoose.model('Subject', subjectSchema);
+export default Subject;

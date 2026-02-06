@@ -1,0 +1,28 @@
+import mongoose from 'mongoose';
+
+const DAY_ENUM = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const TYPE_ENUM = ['LECTURE', 'LAB'];
+
+const scheduleSchema = new mongoose.Schema(
+  {
+    class: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', required: true },
+    subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', required: true },
+    teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', required: true },
+    room: { type: mongoose.Schema.Types.ObjectId, refPath: 'roomModel', required: true },
+    roomModel: { type: String, enum: ['Room', 'Lab'], required: true },
+    type: { type: String, enum: TYPE_ENUM, required: true },
+    day_of_week: { type: String, enum: DAY_ENUM, required: true },
+    start_time: { type: Date, required: true },
+    end_time: { type: Date, required: true },
+    semester_start: { type: Date, required: true },
+    semester_end: { type: Date, required: true },
+  },
+  { timestamps: true }
+);
+
+scheduleSchema.index({ class: 1, day_of_week: 1, start_time: 1 });
+scheduleSchema.index({ teacher: 1, day_of_week: 1, start_time: 1 });
+scheduleSchema.index({ room: 1, day_of_week: 1, start_time: 1 });
+
+const Schedule = mongoose.model('Schedule', scheduleSchema);
+export default Schedule;
