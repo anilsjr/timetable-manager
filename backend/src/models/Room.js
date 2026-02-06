@@ -9,7 +9,6 @@ const roomSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-roomSchema.index({ code: 1 }, { unique: true });
 
 const Room = mongoose.model('Room', roomSchema);
 export default Room;

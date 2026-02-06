@@ -21,7 +21,6 @@ classSchema.pre('save', function (next) {
   next();
 });
 
-classSchema.index({ code: 1 }, { unique: true });
 classSchema.index({ class_name: 1, year: 1, section: 1 });
 
 const Class = mongoose.model('Class', classSchema);

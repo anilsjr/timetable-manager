@@ -11,7 +11,6 @@ const labSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-labSchema.index({ code: 1 }, { unique: true });
 
 const Lab = mongoose.model('Lab', labSchema);
 export default Lab;

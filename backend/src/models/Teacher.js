@@ -11,7 +11,6 @@ const teacherSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-teacherSchema.index({ code: 1 }, { unique: true, sparse: true });
 teacherSchema.index({ short_abbr: 1 });
 
 const Teacher = mongoose.model('Teacher', teacherSchema);

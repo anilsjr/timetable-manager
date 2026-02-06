@@ -11,7 +11,6 @@ const subjectSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-subjectSchema.index({ code: 1 }, { unique: true });
 subjectSchema.index({ short_name: 1 });
 
 const Subject = mongoose.model('Subject', subjectSchema);
