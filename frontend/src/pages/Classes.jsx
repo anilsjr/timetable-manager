@@ -9,12 +9,16 @@ import SearchBar from '../components/SearchBar';
 import ModalForm from '../components/ModalForm';
 import ConfirmDialog from '../components/ConfirmDialog';
 import * as classApi from '../services/classApi';
+import * as subjectApi from '../services/subjectApi';
+import * as labApi from '../services/labApi';
 
 const schema = z.object({
   class_name: z.string().min(1, 'Class name required'),
   year: z.coerce.number().int().min(1, 'Year required'),
   section: z.enum(['F', 'S', 'T', 'L'], { required_error: 'Section required' }),
   student_count: z.coerce.number().int().min(0).optional().default(0),
+  subjects: z.array(z.string()).optional().default([]),
+  labs: z.array(z.string()).optional().default([]),
 });
 
 const columns = [
@@ -22,6 +26,56 @@ const columns = [
   { key: 'year', label: 'Year', hideOnMobile: true },
   { key: 'section', label: 'Section', hideOnMobile: true },
   { key: 'code', label: 'Code' },
+  {
+    key: 'subjects',
+    label: 'Subjects',
+    hideOnMobile: true,
+    render: (val, row) => {
+      const list = row.subjects || [];
+      if (!list.length) return <span className="text-gray-400">—</span>;
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {list.map((s) => {
+            const label = s.code ? `${s.short_name || s.code} (${s.code})` : (s.short_name || s.code);
+            return (
+              <span
+                key={s._id}
+                className="inline-flex items-center  bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-800"
+                title={s.full_name || label}
+              >
+                {label}
+              </span>
+            );
+          })}
+        </div>
+      );
+    },
+  },
+  {
+    key: 'labs',
+    label: 'Labs',
+    hideOnMobile: true,
+    render: (val, row) => {
+      const list = row.labs || [];
+      if (!list.length) return <span className="text-gray-400">—</span>;
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {list.map((l) => {
+            const label = l.code ? `${l.short_name || l.name} (${l.code})` : (l.short_name || l.name);
+            return (
+              <span
+                key={l._id}
+                className="inline-flex items-center bg-blue-100 px-2.5 py-0.5 text-xs font-medium text-sky-800"
+                title={l.name || label}
+              >
+                {label}
+              </span>
+            );
+          })}
+        </div>
+      );
+    },
+  },
   { key: 'student_count', label: 'Students', hideOnMobile: true },
 ];
 
@@ -36,6 +90,8 @@ export default function Classes() {
   const [editing, setEditing] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [subjectList, setSubjectList] = useState([]);
+  const [labList, setLabList] = useState([]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -54,6 +110,22 @@ export default function Classes() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    const loadOptions = async () => {
+      try {
+        const [subRes, labRes] = await Promise.all([
+          subjectApi.getSubjects({ limit: 500 }),
+          labApi.getLabs({ limit: 500 }),
+        ]);
+        setSubjectList(subRes.data || []);
+        setLabList(labRes.data || []);
+      } catch {
+        // non-blocking; modal will show empty lists
+      }
+    };
+    if (modalOpen) loadOptions();
+  }, [modalOpen]);
+
   const handleSearch = useCallback((val) => {
     setSearch(val);
     setPage(1);
@@ -63,36 +135,64 @@ export default function Classes() {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { class_name: '', year: 1, section: 'F', student_count: 0 },
+    defaultValues: { class_name: '', year: 1, section: 'F', student_count: 0, subjects: [], labs: [] },
   });
+
+  const selectedSubjectIds = watch('subjects') || [];
+  const selectedLabIds = watch('labs') || [];
+
+  const toggleSubject = (id) => {
+    const next = selectedSubjectIds.includes(id)
+      ? selectedSubjectIds.filter((s) => s !== id)
+      : [...selectedSubjectIds, id];
+    setValue('subjects', next, { shouldValidate: true });
+  };
+
+  const toggleLab = (id) => {
+    const next = selectedLabIds.includes(id)
+      ? selectedLabIds.filter((l) => l !== id)
+      : [...selectedLabIds, id];
+    setValue('labs', next, { shouldValidate: true });
+  };
 
   const openCreate = () => {
     setEditing(null);
-    reset({ class_name: '', year: 1, section: 'F', student_count: 0 });
+    reset({ class_name: '', year: 1, section: 'F', student_count: 0, subjects: [], labs: [] });
     setModalOpen(true);
   };
 
   const openEdit = (row) => {
     setEditing(row);
+    const subjectIds = (row.subjects || []).map((s) => (typeof s === 'object' ? s._id : s));
+    const labIds = (row.labs || []).map((l) => (typeof l === 'object' ? l._id : l));
     reset({
       class_name: row.class_name,
       year: row.year,
       section: row.section,
       student_count: row.student_count ?? 0,
+      subjects: subjectIds,
+      labs: labIds,
     });
     setModalOpen(true);
   };
 
   const onSubmit = async (values) => {
     try {
+      const payload = {
+        ...values,
+        subjects: values.subjects || [],
+        labs: values.labs || [],
+      };
       if (editing) {
-        await classApi.updateClass(editing._id, values);
+        await classApi.updateClass(editing._id, payload);
         toast.success('Class updated');
       } else {
-        await classApi.createClass(values);
+        await classApi.createClass(payload);
         toast.success('Class created');
       }
       setModalOpen(false);
@@ -164,33 +264,85 @@ export default function Classes() {
         onLimitChange={(l) => { setLimit(l); setPage(1); }}
       />
 
-      <ModalForm open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Class' : 'Add Class'}>
+      <ModalForm open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Class' : 'Add Class'} size="lg">
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Class Name</label>
-            <input {...register('class_name')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="e.g. CSEAIML" />
-            {errors.class_name && <p className="text-red-500 text-sm mt-1">{errors.class_name.message}</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Class Name</label>
+              <input {...register('class_name')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="e.g. CSEAIML" />
+              {errors.class_name && <p className="text-red-500 text-sm mt-1">{errors.class_name.message}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
+              <input {...register('year')} type="number" min={1} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" />
+              {errors.year && <p className="text-red-500 text-sm mt-1">{errors.year.message}</p>}
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-            <input {...register('year')} type="number" min={1} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" />
-            {errors.year && <p className="text-red-500 text-sm mt-1">{errors.year.message}</p>}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
+              <select {...register('section')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
+                <option value="F">F</option>
+                <option value="S">S</option>
+                <option value="T">T</option>
+                <option value="L">L</option>
+              </select>
+              {errors.section && <p className="text-red-500 text-sm mt-1">{errors.section.message}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Student Count</label>
+              <input {...register('student_count')} type="number" min={0} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
-            <select {...register('section')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
-              <option value="F">F</option>
-              <option value="S">S</option>
-              <option value="T">T</option>
-              <option value="L">L</option>
-            </select>
-            {errors.section && <p className="text-red-500 text-sm mt-1">{errors.section.message}</p>}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Subjects</label>
+              <div className="border rounded p-2 max-h-40 overflow-y-auto bg-gray-50">
+                {subjectList.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-2">No subjects. Add subjects first from Subjects page.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {subjectList.map((s) => (
+                      <label key={s._id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded px-2 py-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedSubjectIds.includes(s._id)}
+                          onChange={() => toggleSubject(s._id)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm">{s.short_name || s.code} {s.code && s.short_name !== s.code && `(${s.code})`}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Labs</label>
+              <div className="border rounded p-2 max-h-40 overflow-y-auto bg-gray-50">
+                {labList.length === 0 ? (
+                  <p className="text-sm text-gray-500 py-2">No labs. Add labs first from Labs page.</p>
+                ) : (
+                  <div className="space-y-1.5">
+                    {labList.map((l) => (
+                      <label key={l._id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded px-2 py-1">
+                        <input
+                          type="checkbox"
+                          checked={selectedLabIds.includes(l._id)}
+                          onChange={() => toggleLab(l._id)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm">{l.short_name || l.name} {l.code && `(${l.code})`}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Student Count</label>
-            <input {...register('student_count')} type="number" min={0} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" />
-          </div>
-          <div className="flex justify-end gap-2 pt-2">
+
+          <div className="flex justify-end gap-2 pt-2 border-t">
             <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 border rounded hover:bg-gray-50">
               Cancel
             </button>

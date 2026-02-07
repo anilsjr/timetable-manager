@@ -1,8 +1,11 @@
 /**
  * Generic modal for create/edit forms
+ * @param {string} size - 'md' (default) or 'lg' for wider modal
  */
-export default function ModalForm({ open, onClose, title, children }) {
+export default function ModalForm({ open, onClose, title, children, size = 'md' }) {
   if (!open) return null;
+
+  const maxWidthClass = size === 'lg' ? 'max-w-2xl' : 'max-w-lg';
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -11,7 +14,7 @@ export default function ModalForm({ open, onClose, title, children }) {
         onClick={onClose}
         aria-hidden="true"
       />
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+      <div className={`relative bg-white rounded-lg shadow-xl w-full ${maxWidthClass} mx-4 max-h-[90vh] overflow-y-auto`}>
         <div className="flex items-center justify-between p-4 border-b">
           <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
           <button

@@ -9,6 +9,10 @@ export const createClass = [
     .isIn(SECTION_ENUM)
     .withMessage('Section must be F, S, T, or L'),
   body('student_count').optional().isInt({ min: 0 }).withMessage('Student count must be non-negative'),
+  body('subjects').optional().isArray().withMessage('Subjects must be an array'),
+  body('subjects.*').optional().isMongoId().withMessage('Invalid subject ID'),
+  body('labs').optional().isArray().withMessage('Labs must be an array'),
+  body('labs.*').optional().isMongoId().withMessage('Invalid lab ID'),
 ];
 
 export const updateClass = [
@@ -17,6 +21,10 @@ export const updateClass = [
   body('year').optional().isInt({ min: 1 }),
   body('section').optional().isIn(SECTION_ENUM),
   body('student_count').optional().isInt({ min: 0 }),
+  body('subjects').optional().isArray(),
+  body('subjects.*').optional().isMongoId(),
+  body('labs').optional().isArray(),
+  body('labs.*').optional().isMongoId(),
 ];
 
 export const getById = [param('id').isMongoId().withMessage('Invalid class ID')];
