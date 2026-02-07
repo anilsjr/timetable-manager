@@ -12,6 +12,7 @@ import labRoutes from './routes/labRoutes.js';
 import roomRoutes from './routes/roomRoutes.js';
 import scheduleRoutes from './routes/scheduleRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import importRoutes from './routes/importRoutes.js';
 
 connectDB();
 
@@ -28,6 +29,7 @@ app.use('/api/labs', labRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/schedules', scheduleRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/import', importRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'IPS Timetable API' });

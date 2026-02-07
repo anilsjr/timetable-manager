@@ -9,6 +9,7 @@ import Teachers from './pages/Teachers';
 import Classes from './pages/Classes';
 import Labs from './pages/Labs';
 import Schedules from './pages/Schedules';
+import Import from './pages/Import';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -47,6 +48,7 @@ export default function App() {
         <Route path="classes" element={<Classes />} />
         <Route path="labs" element={<Labs />} />
         <Route path="schedules" element={<Schedules />} />
+        <Route path="import" element={<Import />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

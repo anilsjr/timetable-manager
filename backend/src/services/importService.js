@@ -144,24 +144,41 @@ function num(val, defaultVal) {
   return Number.isFinite(n) ? n : defaultVal;
 }
 
+function isDuplicateKeyError(e) {
+  return e.code === 11000;
+}
+
+function duplicateKeyMessage(type, code) {
+  return `Duplicate ${type} code (in file or already in database): ${code}`;
+}
+
 /**
  * Import subjects. Returns { created, errors }.
+ * Handles: duplicate code in DB, duplicate code within file, Mongoose 11000, and ignores id/_id from file.
  */
 export async function importSubjects(rows) {
   const created = [];
   const errors = [];
+  const codesInFile = new Set();
   for (let i = 0; i < rows.length; i++) {
     try {
       const doc = toSubjectDoc(rows[i]);
-      const existing = await Subject.findOne({ code: doc.code });
+      const code = doc.code;
+      if (codesInFile.has(code)) {
+        errors.push({ row: i + 1, message: `Duplicate code in file: ${code}` });
+        continue;
+      }
+      const existing = await Subject.findOne({ code });
       if (existing) {
-        errors.push({ row: i + 1, message: `Subject code already exists: ${doc.code}` });
+        errors.push({ row: i + 1, message: `Subject code already exists in database: ${code}` });
         continue;
       }
       const subject = await Subject.create(doc);
       created.push(subject);
+      codesInFile.add(code);
     } catch (e) {
-      errors.push({ row: i + 1, message: e.message || String(e) });
+      const msg = isDuplicateKeyError(e) ? duplicateKeyMessage('subject', rows[i]?.code ?? '?') : (e.message || String(e));
+      errors.push({ row: i + 1, message: msg });
     }
   }
   logger.info('Import subjects', { total: rows.length, created: created.length, errors: errors.length });
@@ -170,22 +187,31 @@ export async function importSubjects(rows) {
 
 /**
  * Import labs. Returns { created, errors }.
+ * Handles: duplicate code in DB, duplicate code within file, Mongoose 11000, and ignores id/_id from file.
  */
 export async function importLabs(rows) {
   const created = [];
   const errors = [];
+  const codesInFile = new Set();
   for (let i = 0; i < rows.length; i++) {
     try {
       const doc = toLabDoc(rows[i]);
-      const existing = await Lab.findOne({ code: doc.code });
+      const code = doc.code;
+      if (codesInFile.has(code)) {
+        errors.push({ row: i + 1, message: `Duplicate code in file: ${code}` });
+        continue;
+      }
+      const existing = await Lab.findOne({ code });
       if (existing) {
-        errors.push({ row: i + 1, message: `Lab code already exists: ${doc.code}` });
+        errors.push({ row: i + 1, message: `Lab code already exists in database: ${code}` });
         continue;
       }
       const lab = await Lab.create(doc);
       created.push(lab);
+      codesInFile.add(code);
     } catch (e) {
-      errors.push({ row: i + 1, message: e.message || String(e) });
+      const msg = isDuplicateKeyError(e) ? duplicateKeyMessage('lab', rows[i]?.code ?? '?') : (e.message || String(e));
+      errors.push({ row: i + 1, message: msg });
     }
   }
   logger.info('Import labs', { total: rows.length, created: created.length, errors: errors.length });
@@ -195,10 +221,12 @@ export async function importLabs(rows) {
 /**
  * Import teachers. Resolves subject codes to IDs. subjects column can be comma-separated codes.
  * Returns { created, errors }.
+ * Handles: duplicate code in DB, duplicate code within file, Mongoose 11000, and ignores id/_id from file.
  */
 export async function importTeachers(rows) {
   const created = [];
   const errors = [];
+  const codesInFile = new Set();
   const subjectByCode = new Map();
   const subjects = await Subject.find({}).lean();
   subjects.forEach((s) => subjectByCode.set(String(s.code).trim().toLowerCase(), s._id));
@@ -224,15 +252,23 @@ export async function importTeachers(rows) {
       }
       doc.subjects = subjectIds;
 
+      const code = doc.code || `row-${i + 1}`;
+      if (doc.code && codesInFile.has(doc.code)) {
+        errors.push({ row: i + 1, message: `Duplicate teacher code in file: ${doc.code}` });
+        continue;
+      }
       const existingByCode = doc.code ? await Teacher.findOne({ code: doc.code }) : null;
       if (existingByCode) {
-        errors.push({ row: i + 1, message: `Teacher code already exists: ${doc.code}` });
+        errors.push({ row: i + 1, message: `Teacher code already exists in database: ${doc.code}` });
         continue;
       }
       const teacher = await Teacher.create(doc);
       created.push(teacher);
+      if (doc.code) codesInFile.add(doc.code);
     } catch (e) {
-      errors.push({ row: i + 1, message: e.message || String(e) });
+      const code = rows[i]?.code ?? '?';
+      const msg = isDuplicateKeyError(e) ? duplicateKeyMessage('teacher', code) : (e.message || String(e));
+      errors.push({ row: i + 1, message: msg });
     }
   }
   logger.info('Import teachers', { total: rows.length, created: created.length, errors: errors.length });
