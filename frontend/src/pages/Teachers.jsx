@@ -22,7 +22,7 @@ const schema = z.object({
 const columns = [
   { key: 'name', label: 'Faculty Name' },
   { key: 'short_abbr', label: 'Abbr' },
-  { key: 'code', label: 'Code' },
+  { key: 'code', label: 'Code', hideOnMobile: true },
   {
     key: 'subjects',
     label: 'Subjects',

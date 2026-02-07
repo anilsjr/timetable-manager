@@ -14,16 +14,21 @@ const schema = z.object({
   full_name: z.string().min(1, 'Full name required'),
   short_name: z.string().min(1, 'Short name required'),
   code: z.string().min(1, 'Code required'),
-  weekly_frequency: z.coerce.number().int().min(1, 'Weekly frequency must be at least 1'),
-  duration: z.coerce.number().int().min(1).optional().default(50),
+  weekly_frequency: z
+    .union(z.literal(''), z.coerce.number().int().min(1))
+    .optional()
+    .transform((v) => (v === '' || v === undefined ? undefined : Number(v))),
+  duration: z
+    .union(z.literal(''), z.coerce.number().int().min(1))
+    .optional()
+    .transform((v) => (v === '' || v === undefined ? undefined : Number(v))),
 });
 
 const columns = [
   { key: 'full_name', label: 'Full Name' },
-  { key: 'short_name', label: 'Short Name' },
+  { key: 'short_name', label: 'Short Name', hideOnMobile: true },
   { key: 'code', label: 'Code' },
-  { key: 'weekly_frequency', label: 'Weekly Freq' },
-  { key: 'duration', label: 'Duration (min)' },
+  { key: 'weekly_frequency', label: 'Weekly Freq', hideOnMobile: true },
 ];
 
 export default function Subjects() {
@@ -71,14 +76,14 @@ export default function Subjects() {
       full_name: '',
       short_name: '',
       code: '',
-      weekly_frequency: 1,
-      duration: 50,
+      weekly_frequency: '',
+      duration: '',
     },
   });
 
   const openCreate = () => {
     setEditing(null);
-    reset({ full_name: '', short_name: '', code: '', weekly_frequency: 1, duration: 50 });
+    reset({ full_name: '', short_name: '', code: '', weekly_frequency: '', duration: '' });
     setModalOpen(true);
   };
 
@@ -88,19 +93,26 @@ export default function Subjects() {
       full_name: row.full_name,
       short_name: row.short_name,
       code: row.code,
-      weekly_frequency: row.weekly_frequency,
-      duration: row.duration ?? 50,
+      weekly_frequency: row.weekly_frequency ?? '',
+      duration: row.duration ?? '',
     });
     setModalOpen(true);
   };
 
   const onSubmit = async (values) => {
+    const payload = {
+      full_name: values.full_name,
+      short_name: values.short_name,
+      code: values.code,
+      ...(values.weekly_frequency != null && values.weekly_frequency !== '' && { weekly_frequency: values.weekly_frequency }),
+      ...(values.duration != null && values.duration !== '' && { duration: values.duration }),
+    };
     try {
       if (editing) {
-        await subjectApi.updateSubject(editing._id, values);
+        await subjectApi.updateSubject(editing._id, payload);
         toast.success('Subject updated');
       } else {
-        await subjectApi.createSubject(values);
+        await subjectApi.createSubject(payload);
         toast.success('Subject created');
       }
       setModalOpen(false);
@@ -203,21 +215,23 @@ export default function Subjects() {
             {errors.code && <p className="text-red-500 text-sm mt-1">{errors.code.message}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Weekly Frequency</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Weekly Frequency (optional)</label>
             <input
               {...register('weekly_frequency')}
               type="number"
               min={1}
+              placeholder="e.g. 1"
               className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
             />
             {errors.weekly_frequency && <p className="text-red-500 text-sm mt-1">{errors.weekly_frequency.message}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes, optional)</label>
             <input
               {...register('duration')}
               type="number"
               min={1}
+              placeholder="e.g. 50"
               className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
             />
             {errors.duration && <p className="text-red-500 text-sm mt-1">{errors.duration.message}</p>}

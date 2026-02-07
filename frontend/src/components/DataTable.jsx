@@ -29,7 +29,7 @@ export default function DataTable({ columns, data, loading, emptyMessage = 'No d
             {columns.map((col) => (
               <th
                 key={col.key}
-                className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider"
+                className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${col.hideOnMobile ? 'hidden md:table-cell' : ''}`}
               >
                 {col.label}
               </th>
@@ -44,7 +44,10 @@ export default function DataTable({ columns, data, loading, emptyMessage = 'No d
             <tr key={row._id || idx} className="hover:bg-gray-50">
               <td className="px-4 py-3 text-sm text-gray-700">{idx + 1}</td>
               {columns.map((col) => (
-                <td key={col.key} className="px-4 py-3 text-sm text-gray-700">
+                <td
+                  key={col.key}
+                  className={`px-4 py-3 text-sm text-gray-700 ${col.hideOnMobile ? 'hidden md:table-cell' : ''}`}
+                >
                   {col.render ? col.render(row[col.key], row) : row[col.key]}
                 </td>
               ))}

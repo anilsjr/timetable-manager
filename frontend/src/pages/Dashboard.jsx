@@ -52,8 +52,8 @@ export default function Dashboard() {
     <div>
       <h2 className="text-xl font-bold text-gray-800 mb-6">Dashboard</h2>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+      {/* Summary Cards - grid layout */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         <SummaryCard
           label="Total Subjects"
           value={stats?.subjects ?? 0}

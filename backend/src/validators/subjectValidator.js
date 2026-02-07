@@ -5,6 +5,7 @@ const subjectBody = [
   body('short_name').trim().notEmpty().withMessage('Short name is required'),
   body('code').trim().notEmpty().withMessage('Code is required'),
   body('weekly_frequency')
+    .optional()
     .isInt({ min: 1 })
     .withMessage('Weekly frequency must be a positive integer'),
   body('duration')

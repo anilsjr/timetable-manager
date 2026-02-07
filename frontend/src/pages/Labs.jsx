@@ -20,10 +20,10 @@ const schema = z.object({
 
 const columns = [
   { key: 'name', label: 'Name' },
-  { key: 'short_name', label: 'Short Name' },
-  { key: 'code', label: 'Code' },
+  { key: 'short_name', label: 'Short Name', hideOnMobile: true },
+  { key: 'code', label: 'Code', hideOnMobile: true },
   { key: 'room_number', label: 'Room' },
-  { key: 'capacity', label: 'Capacity' },
+  { key: 'capacity', label: 'Capacity', hideOnMobile: true },
 ];
 
 export default function Labs() {

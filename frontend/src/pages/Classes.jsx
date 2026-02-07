@@ -19,10 +19,10 @@ const schema = z.object({
 
 const columns = [
   { key: 'class_name', label: 'Class Name' },
-  { key: 'year', label: 'Year' },
-  { key: 'section', label: 'Section' },
+  { key: 'year', label: 'Year', hideOnMobile: true },
+  { key: 'section', label: 'Section', hideOnMobile: true },
   { key: 'code', label: 'Code' },
-  { key: 'student_count', label: 'Students' },
+  { key: 'student_count', label: 'Students', hideOnMobile: true },
 ];
 
 export default function Classes() {
