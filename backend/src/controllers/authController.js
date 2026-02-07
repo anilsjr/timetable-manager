@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import logger from '../utils/logger.js';
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '7d' });
@@ -11,11 +12,14 @@ const generateToken = (id) => {
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    logger.info('Login attempt', { email });
     const user = await User.findOne({ email }).select('+password');
     if (!user || !(await user.matchPassword(password))) {
+      logger.warn('Login failed: invalid credentials', { email });
       return res.status(401).json({ success: false, error: 'Invalid email or password' });
     }
     const token = generateToken(user._id);
+    logger.info('Login success', { email, userId: user._id.toString() });
     res.status(200).json({
       success: true,
       token,
@@ -26,6 +30,7 @@ export const login = async (req, res, next) => {
       },
     });
   } catch (error) {
+    logger.error('Login error', { email: req.body?.email, message: error.message });
     next(error);
   }
 };

@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import logger from '../utils/logger.js';
 
 const schema = z.object({
   email: z.string().email('Valid email required'),
@@ -32,7 +33,9 @@ export default function Login() {
       toast.success('Logged in successfully');
       navigate('/');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Login failed');
+      const msg = err.response?.data?.error || err.response?.data?.message || 'Login failed';
+      logger.warn('Login failed', { email: data.email, status: err.response?.status, message: msg });
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -53,7 +56,7 @@ export default function Login() {
               {...register('email')}
               type="email"
               className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="admin@example.com"
+              placeholder="admin@ips.academy"
             />
             {errors.email && (
               <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>

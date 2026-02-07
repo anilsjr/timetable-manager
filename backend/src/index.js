@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import connectDB from './config/db.js';
 import errorHandler from './middlewares/errorHandler.js';
+import logger from './utils/logger.js';
 import authRoutes from './routes/authRoutes.js';
 import subjectRoutes from './routes/subjectRoutes.js';
 import teacherRoutes from './routes/teacherRoutes.js';
@@ -36,5 +37,5 @@ app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  logger.info(`Server running on port ${PORT}`);
 });

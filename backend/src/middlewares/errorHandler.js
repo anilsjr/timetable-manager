@@ -1,3 +1,5 @@
+import logger from '../utils/logger.js';
+
 /**
  * Centralized error handler middleware
  * Handles Mongoose, JWT, validation and custom errors
@@ -5,6 +7,7 @@
 const errorHandler = (err, req, res, next) => {
   let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
   let message = err.message || 'Internal Server Error';
+  logger.error('Request error', { method: req.method, path: req.path, statusCode, message });
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {

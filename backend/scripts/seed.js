@@ -31,7 +31,7 @@ async function seed() {
     ]);
     console.log('Cleared existing data');
 
-    // Admin user
+    // Admin user (email matches Postman collection)
     const admin = await User.create({
       email: 'admin@ips.academy',
       password: 'admin123',

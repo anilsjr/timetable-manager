@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "nodemon src/index.js",
     "dev": "node --watch src/index.js",
     "seed": "node scripts/seed.js"
   },
@@ -17,6 +17,7 @@
     "express-validator": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.6.1",
+    "morgan": "^1.10.1",
     "nodemon": "^3.1.11"
   }
 }
