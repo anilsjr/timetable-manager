@@ -35,3 +35,5 @@ export const updateSchedule = [
 
 export const getById = [param('id').isMongoId().withMessage('Invalid schedule ID')];
 export const deleteById = [param('id').isMongoId().withMessage('Invalid schedule ID')];
+
+export const listByClass = [param('classId').isMongoId().withMessage('Invalid class ID')];

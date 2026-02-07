@@ -3,13 +3,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
-import DataTable from '../components/DataTable';
-import Pagination from '../components/Pagination';
-import SearchBar from '../components/SearchBar';
 import ModalForm from '../components/ModalForm';
 import ConfirmDialog from '../components/ConfirmDialog';
+import ScheduleGrid from '../components/ScheduleGrid';
+import FacultyAssignmentsTable from '../components/FacultyAssignmentsTable';
 import * as scheduleApi from '../services/scheduleApi';
 import * as classApi from '../services/classApi';
+import * as facultyAssignmentsApi from '../services/facultyAssignmentsApi';
 import * as subjectApi from '../services/subjectApi';
 import * as teacherApi from '../services/teacherApi';
 import * as labApi from '../services/labApi';
@@ -30,65 +30,22 @@ const schema = z.object({
   semester_end: z.string().min(1, 'Semester end required'),
 });
 
-const columns = [
-  { key: 'class', label: 'Class', render: (v) => v?.code || v?.class_name || v },
-  { key: 'subject', label: 'Subject', render: (v) => v?.short_name || v?.code || v },
-  { key: 'teacher', label: 'Teacher', render: (v) => v?.short_abbr || v?.name || v },
-  { key: 'day_of_week', label: 'Day' },
-  { key: 'start_time', label: 'Start', render: (v) => formatTime(v) },
-  { key: 'end_time', label: 'End', render: (v) => formatTime(v) },
-  { key: 'type', label: 'Type' },
-];
-
 export default function Schedules() {
-  const [data, setData] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [search, setSearch] = useState('');
+  const [selectedClassId, setSelectedClassId] = useState('');
+  const [schedules, setSchedules] = useState([]);
+  const [facultyAssignments, setFacultyAssignments] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState(null);
-  const [deleteTarget, setDeleteTarget] = useState(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [conflictError, setConflictError] = useState(null);
+  const [facultyLoading, setFacultyLoading] = useState(false);
   const [classes, setClasses] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [rooms, setRooms] = useState([]);
   const [labs, setLabs] = useState([]);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await scheduleApi.getSchedules({ page, limit, search });
-      setData(res.data);
-      setTotal(res.total);
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to fetch schedules');
-    } finally {
-      setLoading(false);
-    }
-  }, [page, limit, search]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
-  useEffect(() => {
-    Promise.all([
-      classApi.getClasses({ page: 1, limit: 200 }).then((r) => setClasses(r.data || [])),
-      subjectApi.getSubjects({ page: 1, limit: 200 }).then((r) => setSubjects(r.data || [])),
-      teacherApi.getTeachers({ page: 1, limit: 200 }).then((r) => setTeachers(r.data || [])),
-      roomApi.getRooms({ page: 1, limit: 200 }).then((r) => setRooms(r.data || [])),
-      labApi.getLabs({ page: 1, limit: 200 }).then((r) => setLabs(r.data || [])),
-    ]).catch(() => {});
-  }, []);
-
-  const handleSearch = useCallback((val) => {
-    setSearch(val);
-    setPage(1);
-  }, []);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [conflictError, setConflictError] = useState(null);
 
   const getSemesterDefaults = () => {
     const now = new Date();
@@ -98,6 +55,71 @@ export default function Schedules() {
     const end = month < 6 ? `${year}-06-30` : `${year}-12-31`;
     return { semester_start: start, semester_end: end };
   };
+
+  const fetchClasses = useCallback(async () => {
+    try {
+      const res = await classApi.getClasses({ page: 1, limit: 200 });
+      setClasses(res.data || []);
+    } catch {
+      toast.error('Failed to fetch classes');
+    }
+  }, []);
+
+  const fetchSchedulesForClass = useCallback(async (classId) => {
+    if (!classId) {
+      setSchedules([]);
+      return;
+    }
+    setLoading(true);
+    try {
+      const data = await scheduleApi.getSchedulesByClass(classId);
+      setSchedules(Array.isArray(data) ? data : []);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to fetch timetable');
+      setSchedules([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchFacultyForClass = useCallback(async (classId) => {
+    if (!classId) {
+      setFacultyAssignments([]);
+      return;
+    }
+    setFacultyLoading(true);
+    try {
+      const data = await facultyAssignmentsApi.getFacultyAssignmentsByClass(classId);
+      setFacultyAssignments(Array.isArray(data) ? data : []);
+    } catch {
+      setFacultyAssignments([]);
+    } finally {
+      setFacultyLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchClasses();
+  }, [fetchClasses]);
+
+  useEffect(() => {
+    Promise.all([
+      subjectApi.getSubjects({ page: 1, limit: 200 }).then((r) => setSubjects(r.data || [])),
+      teacherApi.getTeachers({ page: 1, limit: 200 }).then((r) => setTeachers(r.data || [])),
+      roomApi.getRooms({ page: 1, limit: 200 }).then((r) => setRooms(r.data || [])),
+      labApi.getLabs({ page: 1, limit: 200 }).then((r) => setLabs(r.data || [])),
+    ]).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    fetchSchedulesForClass(selectedClassId);
+    fetchFacultyForClass(selectedClassId);
+  }, [selectedClassId, fetchSchedulesForClass, fetchFacultyForClass]);
+
+  const refreshClassData = useCallback(() => {
+    fetchSchedulesForClass(selectedClassId);
+    fetchFacultyForClass(selectedClassId);
+  }, [selectedClassId, fetchSchedulesForClass, fetchFacultyForClass]);
 
   const {
     register,
@@ -122,26 +144,7 @@ export default function Schedules() {
   });
 
   const roomModel = watch('roomModel');
-
   const roomOptions = roomModel === 'Room' ? rooms : labs;
-
-  const openCreate = () => {
-    setConflictError(null);
-    setEditing(null);
-    reset({
-      class: '',
-      subject: '',
-      teacher: '',
-      room: '',
-      roomModel: 'Room',
-      type: 'LECTURE',
-      day_of_week: 'MON',
-      start_time: '09:45',
-      end_time: '10:35',
-      ...getSemesterDefaults(),
-    });
-    setModalOpen(true);
-  };
 
   const toISO = (dateStr, timeStr) => {
     const [h, m] = (timeStr || '09:00').split(':').map(Number);
@@ -150,28 +153,52 @@ export default function Schedules() {
     return d.toISOString();
   };
 
-  const openEdit = (row) => {
+  const openAdd = (day, slot) => {
     setConflictError(null);
-    setEditing(row);
-    const startStr = row.start_time ? formatTime(row.start_time) : '09:45';
-    const endStr = row.end_time ? formatTime(row.end_time) : '10:35';
-    const classId = typeof row.class === 'object' ? row.class._id : row.class;
-    const subjectId = typeof row.subject === 'object' ? row.subject._id : row.subject;
-    const teacherId = typeof row.teacher === 'object' ? row.teacher._id : row.teacher;
+    setEditing(null);
+    reset({
+      class: selectedClassId,
+      subject: '',
+      teacher: '',
+      room: '',
+      roomModel: 'Room',
+      type: 'LECTURE',
+      day_of_week: day,
+      start_time: slot.start,
+      end_time: slot.end,
+      ...getSemesterDefaults(),
+    });
+    setModalOpen(true);
+  };
+
+  const openEdit = (sched) => {
+    setConflictError(null);
+    setEditing(sched);
+    const startStr = sched.start_time ? formatTime(sched.start_time) : '09:45';
+    const endStr = sched.end_time ? formatTime(sched.end_time) : '10:35';
+    const classId = typeof sched.class === 'object' ? sched.class._id : sched.class;
+    const subjectId = typeof sched.subject === 'object' ? sched.subject._id : sched.subject;
+    const teacherId = typeof sched.teacher === 'object' ? sched.teacher._id : sched.teacher;
     reset({
       class: classId,
       subject: subjectId,
       teacher: teacherId,
-      room: row.room?._id || row.room,
-      roomModel: row.roomModel || 'Room',
-      type: row.type || 'LECTURE',
-      day_of_week: row.day_of_week || 'MON',
+      room: sched.room?._id || sched.room,
+      roomModel: sched.roomModel || 'Room',
+      type: sched.type || 'LECTURE',
+      day_of_week: sched.day_of_week || 'MON',
       start_time: startStr,
       end_time: endStr,
-      semester_start: row.semester_start ? new Date(row.semester_start).toISOString().slice(0, 10) : getSemesterDefaults().semester_start,
-      semester_end: row.semester_end ? new Date(row.semester_end).toISOString().slice(0, 10) : getSemesterDefaults().semester_end,
+      semester_start: sched.semester_start ? new Date(sched.semester_start).toISOString().slice(0, 10) : getSemesterDefaults().semester_start,
+      semester_end: sched.semester_end ? new Date(sched.semester_end).toISOString().slice(0, 10) : getSemesterDefaults().semester_end,
     });
     setModalOpen(true);
+  };
+
+  const handleCellClick = (day, slot, sched) => {
+    if (slot.type !== 'slot') return;
+    if (sched) openEdit(sched);
+    else openAdd(day, slot);
   };
 
   const onSubmit = async (values) => {
@@ -195,10 +222,10 @@ export default function Schedules() {
         toast.success('Schedule updated');
       } else {
         await scheduleApi.createSchedule(payload);
-        toast.success('Schedule created');
+        toast.success('Schedule added');
       }
       setModalOpen(false);
-      fetchData();
+      refreshClassData();
     } catch (err) {
       const conflict = err.response?.data?.conflict;
       if (conflict) {
@@ -210,6 +237,11 @@ export default function Schedules() {
     }
   };
 
+  const openDelete = (sched) => {
+    setModalOpen(false);
+    setDeleteTarget(sched);
+  };
+
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
@@ -217,7 +249,7 @@ export default function Schedules() {
       await scheduleApi.deleteSchedule(deleteTarget._id);
       toast.success('Schedule deleted');
       setDeleteTarget(null);
-      fetchData();
+      refreshClassData();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to delete');
     } finally {
@@ -225,54 +257,52 @@ export default function Schedules() {
     }
   };
 
-  const tableData = data.map((row) => ({
-    ...row,
-    _actions: (
-      <div className="flex gap-2">
-        <button
-          onClick={() => openEdit(row)}
-          className="px-2 py-1 bg-amber-500 text-white text-xs rounded hover:bg-amber-600"
-        >
-          Edit
-        </button>
-        <button
-          onClick={() => setDeleteTarget(row)}
-          className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-        >
-          Delete
-        </button>
-      </div>
-    ),
-  }));
-
   return (
     <div>
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
         <h2 className="text-xl font-bold text-gray-800">Schedules</h2>
-        <div className="flex gap-2 w-full sm:w-auto">
-          <SearchBar value={search} onChange={handleSearch} placeholder="Search by day.." />
-          <button
-            onClick={openCreate}
-            className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white hover:bg-blue-700 shrink-0"
-            title="Add Schedule"
+        <div className="flex items-center gap-3">
+          <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Select Class</label>
+          <select
+            value={selectedClassId}
+            onChange={(e) => setSelectedClassId(e.target.value)}
+            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 min-w-[180px]"
           >
-            +
-          </button>
+            <option value="">Choose class...</option>
+            {classes.map((c) => (
+              <option key={c._id} value={c._id}>
+                {c.code || `${c.class_name}-${c.year}${c.section}`}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
-      <DataTable columns={columns} data={tableData} loading={loading} emptyMessage="No schedules" />
+      {!selectedClassId ? (
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-8 text-center text-gray-500">
+          Select a class to view and manage the timetable.
+        </div>
+      ) : (
+        <>
+          {loading ? (
+            <div className="rounded-xl border border-gray-200 bg-white shadow-sm p-8 text-center text-gray-500">
+              Loading timetable…
+            </div>
+          ) : (
+            <ScheduleGrid schedules={schedules} onCellClick={handleCellClick} />
+          )}
 
-      <Pagination
-        page={page}
-        totalPages={Math.ceil(total / limit)}
-        total={total}
-        limit={limit}
-        onPageChange={setPage}
-        onLimitChange={(l) => { setLimit(l); setPage(1); }}
-      />
+          <div className="mt-8">
+            <FacultyAssignmentsTable data={facultyAssignments} loading={facultyLoading} />
+          </div>
+        </>
+      )}
 
-      <ModalForm open={modalOpen} onClose={() => setModalOpen(false)} title={editing ? 'Edit Schedule' : 'Add Schedule'}>
+      <ModalForm
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        title={editing ? 'Edit Schedule' : 'Add Schedule'}
+      >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {conflictError && (
             <div className="p-3 bg-red-100 text-red-700 rounded text-sm">{conflictError}</div>
@@ -280,7 +310,7 @@ export default function Schedules() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Class</label>
-              <select {...register('class')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
+              <select {...register('class')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" disabled={!!editing}>
                 <option value="">Select class</option>
                 {classes.map((c) => (
                   <option key={c._id} value={c._id}>{c.code || `${c.class_name}-${c.year}${c.section}`}</option>
@@ -375,6 +405,15 @@ export default function Schedules() {
             <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 border rounded hover:bg-gray-50">
               Cancel
             </button>
+            {editing && (
+              <button
+                type="button"
+                onClick={() => openDelete(editing)}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                Delete
+              </button>
+            )}
             <button type="submit" disabled={isSubmitting} className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50">
               {isSubmitting ? 'Saving...' : 'Save'}
             </button>

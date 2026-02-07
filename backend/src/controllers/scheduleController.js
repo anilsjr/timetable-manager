@@ -16,6 +16,15 @@ export const list = async (req, res, next) => {
   }
 };
 
+export const listByClass = async (req, res, next) => {
+  try {
+    const schedules = await scheduleService.getSchedulesByClass(req.params.classId);
+    res.json({ success: true, data: schedules });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getById = async (req, res, next) => {
   try {
     const schedule = await scheduleService.getScheduleById(req.params.id);

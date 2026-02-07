@@ -27,6 +27,16 @@ export const listSchedules = async ({ page = 1, limit = 10, search = '', classId
   return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
+export const getSchedulesByClass = async (classId) => {
+  const data = await Schedule.find({ class: classId })
+    .populate('class', 'class_name year section code')
+    .populate('subject', 'full_name short_name code')
+    .populate('teacher', 'name short_abbr')
+    .sort({ day_of_week: 1, start_time: 1 })
+    .lean();
+  return data;
+};
+
 export const getScheduleById = async (id) => {
   const schedule = await Schedule.findById(id)
     .populate('class', 'class_name year section code student_count')

@@ -23,6 +23,29 @@ const columns = [
   { key: 'name', label: 'Faculty Name' },
   { key: 'short_abbr', label: 'Abbr' },
   { key: 'code', label: 'Code' },
+  {
+    key: 'subjects',
+    label: 'Subjects',
+    render: (_, row) => {
+      const subs = row.subjects || [];
+      if (!subs.length) return '—';
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {subs.map((s, i) => {
+            const label = typeof s === 'object' ? `${s.short_name} (${s.code})` : s;
+            return (
+              <span
+                key={s._id || i}
+                className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+              >
+                {label}
+              </span>
+            );
+          })}
+        </div>
+      );
+    },
+  },
 ];
 
 export default function Teachers() {
@@ -191,23 +214,39 @@ export default function Teachers() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Subjects</label>
-            <select
-              multiple
-              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
-              value={watch('subjects') || []}
-              onChange={(e) =>
-                setValue(
-                  'subjects',
-                  Array.from(e.target.selectedOptions, (o) => o.value)
-                )
-              }
-            >
-              {subjects.map((s) => (
-                <option key={s._id} value={s._id}>
-                  {s.short_name} ({s.code})
-                </option>
-              ))}
-            </select>
+            <p className="text-xs text-gray-500 mb-2">Select the subjects this teacher teaches</p>
+            <div className="border rounded p-3 max-h-48 overflow-y-auto bg-gray-50 space-y-2">
+              {subjects.length === 0 ? (
+                <p className="text-sm text-gray-500">No subjects available. Add subjects first.</p>
+              ) : (
+                subjects.map((s) => {
+                  const selected = (watch('subjects') || []).includes(s._id);
+                  return (
+                    <label
+                      key={s._id}
+                      className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded px-2 py-1.5 -mx-2"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={(e) => {
+                          const current = watch('subjects') || [];
+                          if (e.target.checked) {
+                            setValue('subjects', [...current, s._id]);
+                          } else {
+                            setValue('subjects', current.filter((id) => id !== s._id));
+                          }
+                        }}
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm">
+                        {s.short_name} ({s.code})
+                      </span>
+                    </label>
+                  );
+                })
+              )}
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Max Load Per Day (optional)</label>

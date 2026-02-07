@@ -3,6 +3,9 @@ import api from './api';
 export const getSchedules = (params) =>
   api.get('/api/schedules', { params }).then((r) => r.data);
 
+export const getSchedulesByClass = (classId) =>
+  api.get(`/api/schedules/class/${classId}`).then((r) => r.data?.data ?? []);
+
 export const getScheduleById = (id) =>
   api.get(`/api/schedules/${id}`).then((r) => r.data);
 

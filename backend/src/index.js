@@ -11,6 +11,7 @@ import classRoutes from './routes/classRoutes.js';
 import labRoutes from './routes/labRoutes.js';
 import roomRoutes from './routes/roomRoutes.js';
 import scheduleRoutes from './routes/scheduleRoutes.js';
+import facultyAssignmentRoutes from './routes/facultyAssignmentRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import importRoutes from './routes/importRoutes.js';
 
@@ -28,6 +29,7 @@ app.use('/api/classes', classRoutes);
 app.use('/api/labs', labRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/schedules', scheduleRoutes);
+app.use('/api/faculty-assignments', facultyAssignmentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/import', importRoutes);
 

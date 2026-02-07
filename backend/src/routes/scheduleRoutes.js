@@ -7,12 +7,14 @@ import {
   updateSchedule,
   getById,
   deleteById,
+  listByClass,
 } from '../validators/scheduleValidator.js';
 
 const router = express.Router();
 router.use(protect, adminOnly);
 
 router.get('/', controller.list);
+router.get('/class/:classId', listByClass, validateRequest, controller.listByClass);
 router.get('/:id', getById, validateRequest, controller.getById);
 router.post('/', createSchedule, validateRequest, controller.create);
 router.put('/:id', updateSchedule, validateRequest, controller.update);

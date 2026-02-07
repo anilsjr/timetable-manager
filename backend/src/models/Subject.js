@@ -7,6 +7,7 @@ const subjectSchema = new mongoose.Schema(
     code: { type: String, required: true, unique: true },
     weekly_frequency: { type: Number, required: true },
     duration: { type: Number, default: 50 },
+    coordinator: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
   },
   { timestamps: true }
 );
