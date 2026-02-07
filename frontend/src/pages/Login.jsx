@@ -23,7 +23,7 @@ export default function Login() {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { email: 'admin@ips.academy', password: 'admin123' },
   });
 
   const onSubmit = async (data) => {
