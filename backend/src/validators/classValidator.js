@@ -29,4 +29,5 @@ export const updateClass = [
 
 export const getById = [param('id').isMongoId().withMessage('Invalid class ID')];
 export const getClassSubjects = [param('classId').isMongoId().withMessage('Invalid class ID')];
+export const getClassLabs = [param('classId').isMongoId().withMessage('Invalid class ID')];
 export const deleteById = [param('id').isMongoId().withMessage('Invalid class ID')];

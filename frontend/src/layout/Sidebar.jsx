@@ -82,7 +82,7 @@ export default function Sidebar() {
   return (
     <aside
       className={`bg-gray-800 text-white flex flex-col shrink-0 transition-[width] duration-200 ease-in-out ${
-        collapsed ? 'w-20' : 'w-64'
+        collapsed ? 'w-20' : 'w-45'
       }`}
     >
       <div className={`border-b border-gray-700 flex items-center gap-2 min-h-[57px] ${collapsed ? 'justify-center p-2' : 'justify-between p-4'}`}>
@@ -98,22 +98,29 @@ export default function Sidebar() {
       </div>
       <nav className="flex-1 p-2">
         {navItems.map(({ path, label, icon: Icon }) => (
-          <NavLink
-            key={path}
-            to={path}
-            end={path === '/'}
-            title={collapsed ? label : undefined}
-            className={({ isActive }) =>
-              `flex items-center gap-3 rounded mb-1 px-3 py-3 ${
-                collapsed ? 'justify-center px-0' : 'px-4'
-              } ${
-                isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'
-              }`
-            }
-          >
-            <Icon className="w-5 h-5 shrink-0" />
-            {!collapsed && <span>{label}</span>}
-          </NavLink>
+          <div key={path} className="group/nav relative mb-1">
+            <NavLink
+              to={path}
+              end={path === '/'}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded px-3 py-3 ${
+                  collapsed ? 'justify-center px-0' : 'px-4'
+                } ${
+                  isActive ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700'
+                }`
+              }
+            >
+              <Icon className="w-5 h-5 shrink-0" />
+              {!collapsed && <span>{label}</span>}
+            </NavLink>
+            {/* Hint tooltip on hover (shown when collapsed or always as hint) */}
+            <span
+              className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 z-50 ml-2 px-2.5 py-1.5 text-sm font-medium text-white bg-gray-900 rounded shadow-lg whitespace-nowrap opacity-0 invisible transition-all duration-150 group-hover/nav:opacity-100 group-hover/nav:visible"
+              role="tooltip"
+            >
+              {label}
+            </span>
+          </div>
         ))}
       </nav>
     </aside>

@@ -93,11 +93,15 @@ export default function Schedules() {
     const classId = typeof sched.class === 'object' ? sched.class._id : sched.class;
     const subjectId = typeof sched.subject === 'object' ? sched.subject._id : sched.subject;
     const teacherId = typeof sched.teacher === 'object' ? sched.teacher._id : sched.teacher;
+    const labId = sched.roomModel === 'Lab' && sched.room
+      ? (typeof sched.room === 'object' ? sched.room._id : sched.room)
+      : '';
     setEditing(sched);
     setModalInitial({
       classId,
       subjectId,
       teacherId,
+      labId,
       type: sched.type || 'LECTURE',
       day: sched.day_of_week || 'MON',
       startTime: sched.start_time ? formatTime(sched.start_time) : '09:45',
@@ -114,9 +118,9 @@ export default function Schedules() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+      <div className="flex flex-col sm:flex-row justify-left items-start sm:items-center gap-4 mb-4">
         <h2 className="text-xl font-bold text-gray-800">Schedules</h2>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-">
           <label className="text-sm font-medium text-gray-700 whitespace-nowrap">Select Class</label>
           <select
             value={selectedClassId}

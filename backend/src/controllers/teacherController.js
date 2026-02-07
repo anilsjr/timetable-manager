@@ -21,7 +21,12 @@ export const getById = async (req, res, next) => {
 
 export const getTeachersBySubject = async (req, res, next) => {
   try {
-    const teachers = await teacherService.getTeachersBySubject(req.params.subjectId);
+    const { day, startTime, excludeScheduleId } = req.query;
+    const teachers = await teacherService.getTeachersBySubject(req.params.subjectId, {
+      day: day || undefined,
+      startTime: startTime || undefined,
+      excludeScheduleId: excludeScheduleId || undefined,
+    });
     res.json({ success: true, data: teachers });
   } catch (error) {
     next(error);

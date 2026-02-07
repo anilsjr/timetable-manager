@@ -93,16 +93,18 @@ export async function checkConflicts(payload, excludeId = null) {
     }
   }
 
-  const teacherOverlaps = await Schedule.find({ ...query, teacher: teacherId }).lean();
-  for (const s of teacherOverlaps) {
-    const sStart = timeToMinutes(s.start_time);
-    const sEnd = timeToMinutes(s.end_time);
-    if (minutesOverlap(startMin, endMin, sStart, sEnd)) {
-      return {
-        type: 'TEACHER_CONFLICT',
-        message: 'Teacher already assigned at this time',
-        conflict_id: s._id.toString(),
-      };
+  if (teacherId) {
+    const teacherOverlaps = await Schedule.find({ ...query, teacher: teacherId }).lean();
+    for (const s of teacherOverlaps) {
+      const sStart = timeToMinutes(s.start_time);
+      const sEnd = timeToMinutes(s.end_time);
+      if (minutesOverlap(startMin, endMin, sStart, sEnd)) {
+        return {
+          type: 'TEACHER_CONFLICT',
+          message: 'Teacher already assigned at this time',
+          conflict_id: s._id.toString(),
+        };
+      }
     }
   }
 
@@ -144,19 +146,21 @@ export async function checkConflicts(payload, excludeId = null) {
     }
   }
 
-  const subject = await Subject.findById(subjectId).lean();
-  const requiredFreq = subject?.weekly_frequency ?? 0;
-  const existingCount = await Schedule.countDocuments({
-    class: classId,
-    subject: subjectId,
-    ...(excludeId ? { _id: { $ne: excludeId } } : {}),
-  });
-  if (requiredFreq > 0 && existingCount >= requiredFreq) {
-    return {
-      type: 'WEEKLY_FREQUENCY_EXCEEDED',
-      message: `Subject already has ${existingCount} sessions per week (max ${requiredFreq})`,
-      conflict_id: '',
-    };
+  if (subjectId) {
+    const subject = await Subject.findById(subjectId).lean();
+    const requiredFreq = subject?.weekly_frequency ?? 0;
+    const existingCount = await Schedule.countDocuments({
+      class: classId,
+      subject: subjectId,
+      ...(excludeId ? { _id: { $ne: excludeId } } : {}),
+    });
+    if (requiredFreq > 0 && existingCount >= requiredFreq) {
+      return {
+        type: 'WEEKLY_FREQUENCY_EXCEEDED',
+        message: `Subject already has ${existingCount} sessions per week (max ${requiredFreq})`,
+        conflict_id: '',
+      };
+    }
   }
 
   return null;

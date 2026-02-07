@@ -6,8 +6,8 @@ const TYPE_ENUM = ['LECTURE', 'LAB'];
 const scheduleSchema = new mongoose.Schema(
   {
     class: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', required: true },
-    subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', required: true },
-    teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', required: true },
+    subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', default: null },
+    teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
     room: { type: mongoose.Schema.Types.ObjectId, refPath: 'roomModel', default: null },
     roomModel: { type: String, enum: ['Room', 'Lab'], default: null },
     type: { type: String, enum: TYPE_ENUM, required: true },

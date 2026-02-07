@@ -6,24 +6,12 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    {
-      "key": "baseUrl",
-      "value": "http://localhost:5001"
-    },
-    {
-      "key": "token",
-      "value": ""
-    }
+    { "key": "baseUrl", "value": "http://localhost:5001" },
+    { "key": "token", "value": "" }
   ],
   "auth": {
     "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{token}}",
-        "type": "string"
-      }
-    ]
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
   },
   "item": [
     {
@@ -48,16 +36,9 @@
             }
           ],
           "request": {
-            "auth": {
-              "type": "noauth"
-            },
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"admin@ips.academy\",\n  \"password\": \"admin123\"\n}"
@@ -69,16 +50,9 @@
         {
           "name": "Register",
           "request": {
-            "auth": {
-              "type": "noauth"
-            },
+            "auth": { "type": "noauth" },
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password123\"\n}"
@@ -103,9 +77,7 @@
         {
           "name": "Health Check",
           "request": {
-            "auth": {
-              "type": "noauth"
-            },
+            "auth": { "type": "noauth" },
             "method": "GET",
             "url": "{{baseUrl}}/api/health",
             "description": "API health check"
@@ -122,26 +94,12 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/api/subjects?page=1&limit=10&search=",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "subjects"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "subjects"],
               "query": [
-                {
-                  "key": "page",
-                  "value": "1"
-                },
-                {
-                  "key": "limit",
-                  "value": "10"
-                },
-                {
-                  "key": "search",
-                  "value": ""
-                }
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "search", "value": "" }
               ]
             },
             "description": "List subjects with pagination and search"
@@ -159,12 +117,7 @@
           "name": "Create Subject",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"full_name\": \"Natural Language Processing\",\n  \"short_name\": \"NLP\",\n  \"code\": \"PCC CL13\",\n  \"weekly_frequency\": 2,\n  \"duration\": 50\n}"
@@ -177,12 +130,7 @@
           "name": "Update Subject",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"full_name\": \"Natural Language Processing\",\n  \"short_name\": \"NLP\",\n  \"code\": \"PCC CL13\",\n  \"weekly_frequency\": 2,\n  \"duration\": 50\n}"
@@ -213,52 +161,62 @@
           }
         },
         {
+          "name": "Get Teachers by Subject",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/api/teachers/by-subject/:subjectId?day=MON&startTime=09:45&excludeScheduleId=",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teachers", "by-subject", ":subjectId"],
+              "query": [
+                { "key": "day", "value": "MON", "description": "Optional. Filter to teachers not assigned at this day (MON|TUE|WED|THU|FRI|SAT)" },
+                { "key": "startTime", "value": "09:45", "description": "Optional. HH:mm - filter to teachers not assigned at this slot" },
+                { "key": "excludeScheduleId", "value": "", "description": "Optional. When editing, exclude this schedule so current teacher stays in list" }
+              ]
+            },
+            "description": "Teachers who can teach the subject. Optional query: day, startTime to exclude teachers already assigned at that slot; excludeScheduleId for edit mode."
+          }
+        },
+        {
           "name": "Get Teacher",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/teachers/:id"
+            "url": "{{baseUrl}}/api/teachers/:id",
+            "description": "Get teacher by ID"
           }
         },
         {
           "name": "Create Teacher",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Mr. John Doe\",\n  \"short_abbr\": \"JD\",\n  \"code\": \"8\",\n  \"subjects\": [],\n  \"max_load_per_day\": 4\n}"
             },
             "url": "{{baseUrl}}/api/teachers",
-            "description": "Create teacher. subjects: array of subject ObjectIds"
+            "description": "Create teacher. subjects: array of subject ObjectIds."
           }
         },
         {
           "name": "Update Teacher",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Mr. John Doe\",\n  \"short_abbr\": \"JD\",\n  \"subjects\": []\n}"
             },
-            "url": "{{baseUrl}}/api/teachers/:id"
+            "url": "{{baseUrl}}/api/teachers/:id",
+            "description": "Update teacher"
           }
         },
         {
           "name": "Delete Teacher",
           "request": {
             "method": "DELETE",
-            "url": "{{baseUrl}}/api/teachers/:id"
+            "url": "{{baseUrl}}/api/teachers/:id",
+            "description": "Delete teacher"
           }
         }
       ]
@@ -275,52 +233,61 @@
           }
         },
         {
+          "name": "Get Class Subjects",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/classes/:classId/subjects",
+            "description": "Get subjects assigned to this class. Use classId in path (same as class _id)."
+          }
+        },
+        {
+          "name": "Get Class Labs",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/classes/:classId/labs",
+            "description": "Get labs assigned to this class. Use classId in path (same as class _id)."
+          }
+        },
+        {
           "name": "Get Class",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/classes/:id"
+            "url": "{{baseUrl}}/api/classes/:id",
+            "description": "Get class by ID"
           }
         },
         {
           "name": "Create Class",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"class_name\": \"CSEAIML\",\n  \"year\": 3,\n  \"section\": \"T\",\n  \"student_count\": 60\n}"
+              "raw": "{\n  \"class_name\": \"CSEAIML\",\n  \"year\": 3,\n  \"section\": \"T\",\n  \"student_count\": 60,\n  \"subjects\": [],\n  \"labs\": []\n}"
             },
             "url": "{{baseUrl}}/api/classes",
-            "description": "Create class. section: F|S|T|L. code auto-generated as class_name-year+section"
+            "description": "Create class. section: F|S|T|L. code auto-generated. subjects, labs: arrays of ObjectIds."
           }
         },
         {
           "name": "Update Class",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"class_name\": \"CSEAIML\",\n  \"year\": 3,\n  \"section\": \"T\",\n  \"student_count\": 60\n}"
+              "raw": "{\n  \"class_name\": \"CSEAIML\",\n  \"year\": 3,\n  \"section\": \"T\",\n  \"student_count\": 60,\n  \"subjects\": [],\n  \"labs\": []\n}"
             },
-            "url": "{{baseUrl}}/api/classes/:id"
+            "url": "{{baseUrl}}/api/classes/:id",
+            "description": "Update class"
           }
         },
         {
           "name": "Delete Class",
           "request": {
             "method": "DELETE",
-            "url": "{{baseUrl}}/api/classes/:id"
+            "url": "{{baseUrl}}/api/classes/:id",
+            "description": "Delete class"
           }
         }
       ]
@@ -332,55 +299,50 @@
           "name": "List Labs",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/labs?page=1&limit=10&search="
+            "url": "{{baseUrl}}/api/labs?page=1&limit=10&search=",
+            "description": "List labs with pagination and search"
           }
         },
         {
           "name": "Get Lab",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/labs/:id"
+            "url": "{{baseUrl}}/api/labs/:id",
+            "description": "Get lab by ID"
           }
         },
         {
           "name": "Create Lab",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"NLP Lab\",\n  \"short_name\": \"NLP Lab\",\n  \"code\": \"N107\",\n  \"room_number\": \"N-107\",\n  \"capacity\": 60\n}"
             },
-            "url": "{{baseUrl}}/api/labs"
+            "url": "{{baseUrl}}/api/labs",
+            "description": "Create lab"
           }
         },
         {
           "name": "Update Lab",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"NLP Lab\",\n  \"short_name\": \"NLP Lab\",\n  \"code\": \"N107\",\n  \"room_number\": \"N-107\",\n  \"capacity\": 60\n}"
             },
-            "url": "{{baseUrl}}/api/labs/:id"
+            "url": "{{baseUrl}}/api/labs/:id",
+            "description": "Update lab"
           }
         },
         {
           "name": "Delete Lab",
           "request": {
             "method": "DELETE",
-            "url": "{{baseUrl}}/api/labs/:id"
+            "url": "{{baseUrl}}/api/labs/:id",
+            "description": "Delete lab"
           }
         }
       ]
@@ -392,55 +354,50 @@
           "name": "List Rooms",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/rooms?page=1&limit=10&search="
+            "url": "{{baseUrl}}/api/rooms?page=1&limit=10&search=",
+            "description": "List rooms with pagination and search"
           }
         },
         {
           "name": "Get Room",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/rooms/:id"
+            "url": "{{baseUrl}}/api/rooms/:id",
+            "description": "Get room by ID"
           }
         },
         {
           "name": "Create Room",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"S-202\",\n  \"code\": \"S202\",\n  \"capacity\": 70\n}"
             },
-            "url": "{{baseUrl}}/api/rooms"
+            "url": "{{baseUrl}}/api/rooms",
+            "description": "Create room"
           }
         },
         {
           "name": "Update Room",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"S-202\",\n  \"code\": \"S202\",\n  \"capacity\": 70\n}"
             },
-            "url": "{{baseUrl}}/api/rooms/:id"
+            "url": "{{baseUrl}}/api/rooms/:id",
+            "description": "Update room"
           }
         },
         {
           "name": "Delete Room",
           "request": {
             "method": "DELETE",
-            "url": "{{baseUrl}}/api/rooms/:id"
+            "url": "{{baseUrl}}/api/rooms/:id",
+            "description": "Delete room"
           }
         }
       ]
@@ -452,57 +409,82 @@
           "name": "List Schedules",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/schedules?page=1&limit=10&search=&class=&teacher=",
-            "description": "List schedules. Optional filters: class, teacher"
+            "url": {
+              "raw": "{{baseUrl}}/api/schedules?page=1&limit=10&search=&class=&teacher=",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "schedules"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "search", "value": "" },
+                { "key": "class", "value": "", "description": "Filter by class ID" },
+                { "key": "teacher", "value": "", "description": "Filter by teacher ID" }
+              ]
+            },
+            "description": "List schedules with pagination. Optional query: class, teacher."
+          }
+        },
+        {
+          "name": "Get Schedules by Class",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/schedules/class/:classId",
+            "description": "Get all schedules for a class. Returns array; populates class, subject, teacher, room."
           }
         },
         {
           "name": "Get Schedule",
           "request": {
             "method": "GET",
-            "url": "{{baseUrl}}/api/schedules/:id"
+            "url": "{{baseUrl}}/api/schedules/:id",
+            "description": "Get schedule by ID"
           }
         },
         {
-          "name": "Create Schedule",
+          "name": "Create Schedule (Lecture)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"class\": \"CLASS_OBJECT_ID\",\n  \"subject\": \"SUBJECT_OBJECT_ID\",\n  \"teacher\": \"TEACHER_OBJECT_ID\",\n  \"room\": \"ROOM_OR_LAB_OBJECT_ID\",\n  \"roomModel\": \"Room\",\n  \"type\": \"LECTURE\",\n  \"day_of_week\": \"MON\",\n  \"start_time\": \"2026-01-05T09:45:00.000Z\",\n  \"end_time\": \"2026-01-05T10:35:00.000Z\",\n  \"semester_start\": \"2026-01-01T00:00:00.000Z\",\n  \"semester_end\": \"2026-06-30T23:59:59.999Z\"\n}"
+              "raw": "{\n  \"classId\": \"CLASS_OBJECT_ID\",\n  \"subjectId\": \"SUBJECT_OBJECT_ID\",\n  \"teacherId\": \"TEACHER_OBJECT_ID\",\n  \"day\": \"MON\",\n  \"startTime\": \"09:45\",\n  \"endTime\": \"10:35\",\n  \"type\": \"LECTURE\"\n}"
             },
             "url": "{{baseUrl}}/api/schedules",
-            "description": "Create schedule. roomModel: Room|Lab. type: LECTURE|LAB. day_of_week: MON|TUE|WED|THU|FRI|SAT. Times must be ISO8601. Subject to conflict validation."
+            "description": "Create lecture schedule. day: MON|TUE|WED|THU|FRI|SAT. startTime/endTime: HH:mm. Teacher must be allowed to teach subject; conflict checks (class/teacher slot) apply. No semester_start/semester_end."
+          }
+        },
+        {
+          "name": "Create Schedule (Lab)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"classId\": \"CLASS_OBJECT_ID\",\n  \"day\": \"MON\",\n  \"startTime\": \"09:45\",\n  \"endTime\": \"10:35\",\n  \"type\": \"LAB\",\n  \"room\": \"LAB_OBJECT_ID\",\n  \"roomModel\": \"Lab\"\n}"
+            },
+            "url": "{{baseUrl}}/api/schedules",
+            "description": "Create lab schedule. room = Lab document ID, roomModel = 'Lab'. subject/teacher optional for LAB."
           }
         },
         {
           "name": "Update Schedule",
           "request": {
             "method": "PUT",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"class\": \"CLASS_OBJECT_ID\",\n  \"subject\": \"SUBJECT_OBJECT_ID\",\n  \"teacher\": \"TEACHER_OBJECT_ID\",\n  \"room\": \"ROOM_OR_LAB_OBJECT_ID\",\n  \"roomModel\": \"Room\",\n  \"type\": \"LECTURE\",\n  \"day_of_week\": \"MON\",\n  \"start_time\": \"2026-01-05T09:45:00.000Z\",\n  \"end_time\": \"2026-01-05T10:35:00.000Z\",\n  \"semester_start\": \"2026-01-01T00:00:00.000Z\",\n  \"semester_end\": \"2026-06-30T23:59:59.999Z\"\n}"
+              "raw": "{\n  \"classId\": \"CLASS_OBJECT_ID\",\n  \"subjectId\": \"SUBJECT_OBJECT_ID\",\n  \"teacherId\": \"TEACHER_OBJECT_ID\",\n  \"day\": \"MON\",\n  \"startTime\": \"09:45\",\n  \"endTime\": \"10:35\",\n  \"type\": \"LECTURE\"\n}"
             },
-            "url": "{{baseUrl}}/api/schedules/:id"
+            "url": "{{baseUrl}}/api/schedules/:id",
+            "description": "Update schedule. Same body shape as create. For LAB include room, roomModel. Omitted fields (e.g. room) are left unchanged."
           }
         },
         {
           "name": "Delete Schedule",
           "request": {
             "method": "DELETE",
-            "url": "{{baseUrl}}/api/schedules/:id"
+            "url": "{{baseUrl}}/api/schedules/:id",
+            "description": "Delete schedule"
           }
         }
       ]

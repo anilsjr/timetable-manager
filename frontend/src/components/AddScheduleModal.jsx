@@ -10,15 +10,29 @@ import * as scheduleApi from '../services/scheduleApi';
 import * as teacherApi from '../services/teacherApi';
 import { DAYS, getDayLabel } from '../utils/dateHelpers';
 
-const schema = z.object({
-  classId: z.string().min(1, 'Class required'),
-  subjectId: z.string().min(1, 'Subject required'),
-  teacherId: z.string().min(1, 'Teacher required'),
-  type: z.enum(['LECTURE', 'LAB']),
-  day: z.enum(DAYS),
-  startTime: z.string().min(1, 'Start time required'),
-  endTime: z.string().min(1, 'End time required'),
-});
+const schema = z
+  .object({
+    classId: z.string().min(1, 'Class required'),
+    subjectId: z.string(),
+    teacherId: z.string(),
+    labId: z.string(),
+    type: z.enum(['LECTURE', 'LAB']),
+    day: z.enum(DAYS),
+    startTime: z.string().min(1, 'Start time required'),
+    endTime: z.string().min(1, 'End time required'),
+  })
+  .refine((data) => data.type !== 'LECTURE' || (data.subjectId && data.subjectId.length > 0), {
+    message: 'Subject required',
+    path: ['subjectId'],
+  })
+  .refine((data) => data.type !== 'LECTURE' || (data.teacherId && data.teacherId.length > 0), {
+    message: 'Teacher required',
+    path: ['teacherId'],
+  })
+  .refine((data) => data.type !== 'LAB' || (data.labId && data.labId.length > 0), {
+    message: 'Lab required',
+    path: ['labId'],
+  });
 
 export default function AddScheduleModal({
   open,
@@ -29,8 +43,10 @@ export default function AddScheduleModal({
   onSuccess,
 }) {
   const [classSubjects, setClassSubjects] = useState([]);
+  const [classLabs, setClassLabs] = useState([]);
   const [teachersBySubject, setTeachersBySubject] = useState([]);
   const [subjectsLoading, setSubjectsLoading] = useState(false);
+  const [labsLoading, setLabsLoading] = useState(false);
   const [teachersLoading, setTeachersLoading] = useState(false);
 
   const {
@@ -46,6 +62,7 @@ export default function AddScheduleModal({
       classId: '',
       subjectId: '',
       teacherId: '',
+      labId: '',
       type: 'LECTURE',
       day: 'MON',
       startTime: '09:45',
@@ -56,9 +73,12 @@ export default function AddScheduleModal({
   const type = watch('type');
   const classId = watch('classId');
   const subjectId = watch('subjectId');
+  const day = watch('day');
+  const startTime = watch('startTime');
 
-  const subjectEnabled = !!type;
-  const teacherEnabled = !!subjectId;
+  const isSubjectType = type === 'LECTURE';
+  const subjectEnabled = isSubjectType;
+  const teacherEnabled = isSubjectType && !!subjectId;
   const currentClassId = watch('classId');
   const displayClasses = currentClassId
     ? classes.filter((c) => c._id === currentClassId)
@@ -72,6 +92,7 @@ export default function AddScheduleModal({
         classId: initialValues.classId ?? '',
         subjectId: initialValues.subjectId ?? '',
         teacherId: initialValues.teacherId ?? '',
+        labId: initialValues.labId ?? '',
         type: initialValues.type ?? 'LECTURE',
         day: initialValues.day ?? 'MON',
         startTime: initialValues.startTime ?? '09:45',
@@ -81,7 +102,7 @@ export default function AddScheduleModal({
   }, [open, initialValues, reset]);
 
   useEffect(() => {
-    if (!classId || !subjectEnabled) {
+    if (!classId || !isSubjectType) {
       setClassSubjects([]);
       setValue('subjectId', '');
       setValue('teacherId', '');
@@ -97,7 +118,25 @@ export default function AddScheduleModal({
         setClassSubjects([]);
       })
       .finally(() => setSubjectsLoading(false));
-  }, [classId, subjectEnabled, setValue]);
+  }, [classId, isSubjectType, setValue]);
+
+  const isLabType = type === 'LAB';
+  useEffect(() => {
+    if (!classId || !isLabType) {
+      setClassLabs([]);
+      setValue('labId', '');
+      return;
+    }
+    setLabsLoading(true);
+    classApi
+      .getClassLabs(classId)
+      .then((list) => setClassLabs(Array.isArray(list) ? list : []))
+      .catch(() => {
+        toast.error('Failed to load labs');
+        setClassLabs([]);
+      })
+      .finally(() => setLabsLoading(false));
+  }, [classId, isLabType, setValue]);
 
   useEffect(() => {
     if (!subjectId || !teacherEnabled) {
@@ -106,32 +145,47 @@ export default function AddScheduleModal({
       return;
     }
     setTeachersLoading(true);
+    const params = { day, startTime };
+    if (editing?._id) params.excludeScheduleId = editing._id;
     teacherApi
-      .getTeachersBySubject(subjectId)
+      .getTeachersBySubject(subjectId, params)
       .then((list) => setTeachersBySubject(Array.isArray(list) ? list : []))
       .catch(() => {
         toast.error('Failed to load teachers');
         setTeachersBySubject([]);
       })
       .finally(() => setTeachersLoading(false));
-  }, [subjectId, teacherEnabled, setValue]);
+  }, [subjectId, teacherEnabled, day, startTime, editing, setValue]);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const payload = (values) => ({
-    classId: values.classId,
-    subjectId: values.subjectId,
-    teacherId: values.teacherId,
-    day: values.day,
-    startTime: values.startTime,
-    endTime: values.endTime,
-    type: values.type,
-  });
+  const payload = (values) => {
+    const p = {
+      classId: values.classId,
+      day: values.day,
+      startTime: values.startTime,
+      endTime: values.endTime,
+      type: values.type,
+    };
+    if (values.type === 'LECTURE' && values.subjectId && values.teacherId) {
+      p.subjectId = values.subjectId;
+      p.teacherId = values.teacherId;
+    }
+    if (values.type === 'LAB' && values.labId) {
+      p.room = values.labId;
+      p.roomModel = 'Lab';
+    }
+    return p;
+  };
 
   const onSubmit = async (values) => {
-    if (!values.subjectId || !values.teacherId) {
+    if (values.type === 'LECTURE' && (!values.subjectId || !values.teacherId)) {
       toast.error('Please select subject and teacher');
+      return;
+    }
+    if (values.type === 'LAB' && !values.labId) {
+      toast.error('Please select a lab');
       return;
     }
     try {
@@ -238,43 +292,74 @@ export default function AddScheduleModal({
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
-          <select
-            {...register('subjectId')}
-            disabled={!subjectEnabled || subjectsLoading}
-            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-          >
-            <option value="">Select subject</option>
-            {classSubjects.map((s) => (
-              <option key={s._id} value={s._id}>
-                {s.short_name} ({s.code})
-              </option>
-            ))}
-          </select>
-          {errors.subjectId && (
-            <p className="text-red-500 text-sm mt-1">{errors.subjectId.message}</p>
-          )}
-        </div>
+        {isLabType && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Lab</label>
+            <select
+              {...register('labId')}
+              disabled={labsLoading}
+              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">Select lab</option>
+              {classLabs.map((lab) => (
+                <option key={lab._id} value={lab._id}>
+                  {lab.short_name || lab.name} ({lab.code})
+                </option>
+              ))}
+            </select>
+            {classLabs.length === 0 && !labsLoading && (
+              <p className="text-amber-600 text-sm mt-1">No labs assigned to this class. Assign labs in Class settings.</p>
+            )}
+            {errors.labId && (
+              <p className="text-red-500 text-sm mt-1">{errors.labId.message}</p>
+            )}
+          </div>
+        )}
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Teacher</label>
-          <select
-            {...register('teacherId')}
-            disabled={!teacherEnabled || teachersLoading}
-            className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-          >
-            <option value="">Select teacher</option>
-            {teachersBySubject.map((t) => (
-              <option key={t._id} value={t._id}>
-                {t.name} ({t.short_abbr})
-              </option>
-            ))}
-          </select>
-          {errors.teacherId && (
-            <p className="text-red-500 text-sm mt-1">{errors.teacherId.message}</p>
-          )}
-        </div>
+        {isSubjectType && (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+              <select
+                {...register('subjectId')}
+                disabled={!subjectEnabled || subjectsLoading}
+                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="">Select subject</option>
+                {classSubjects.map((s) => (
+                  <option key={s._id} value={s._id}>
+                    {s.short_name} ({s.code})
+                  </option>
+                ))}
+              </select>
+              {errors.subjectId && (
+                <p className="text-red-500 text-sm mt-1">{errors.subjectId.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Teacher</label>
+              <select
+                {...register('teacherId')}
+                disabled={!teacherEnabled || teachersLoading}
+                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="">Select teacher</option>
+                {teachersBySubject.map((t) => (
+                  <option key={t._id} value={t._id}>
+                    {t.name} ({t.short_abbr})
+                  </option>
+                ))}
+              </select>
+              {subjectId && teachersBySubject.length === 0 && !teachersLoading && (
+                <p className="text-amber-600 text-sm mt-1">No teachers available for this slot. All teachers who can teach this subject are already assigned at this day and time.</p>
+              )}
+              {errors.teacherId && (
+                <p className="text-red-500 text-sm mt-1">{errors.teacherId.message}</p>
+              )}
+            </div>
+          </>
+        )}
 
         <div className="flex justify-end gap-2 pt-2">
           <button
@@ -295,7 +380,10 @@ export default function AddScheduleModal({
           )}
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={
+              isSubmitting ||
+              (isSubjectType && (teachersBySubject.length === 0 || !watch('teacherId')))
+            }
             className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
           >
             {isSubmitting ? 'Saving...' : 'Save'}

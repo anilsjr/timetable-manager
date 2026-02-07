@@ -27,8 +27,13 @@ export const createSchedule = [
     body().custom((_, { req }) => {
       const b = req.body;
       if (!b.classId && !b.class) throw new Error('Class is required');
-      if (!b.subjectId && !b.subject) throw new Error('Subject is required');
-      if (!b.teacherId && !b.teacher) throw new Error('Teacher is required');
+      if (b.type === 'LAB') {
+        if (!b.room) throw new Error('Lab is required');
+        if (b.roomModel !== 'Lab') throw new Error('roomModel must be Lab for lab schedule');
+      } else {
+        if (!b.subjectId && !b.subject) throw new Error('Subject is required');
+        if (!b.teacherId && !b.teacher) throw new Error('Teacher is required');
+      }
       if (!b.day && !b.day_of_week) throw new Error('Day is required');
       const hasStart = b.startTime || (b.start_time && (b.start_time.length <= 5 ? timePattern.test(b.start_time) : true));
       const hasEnd = b.endTime || (b.end_time && (b.end_time.length <= 5 ? timePattern.test(b.end_time) : true));

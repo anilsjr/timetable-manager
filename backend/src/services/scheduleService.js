@@ -35,8 +35,8 @@ function normalizePayload(body) {
 
   const normalized = {
     class: classId,
-    subject: subjectId,
-    teacher: teacherId,
+    subject: subjectId ?? null,
+    teacher: teacherId ?? null,
     type: body.type,
     day_of_week: day,
     start_time,
@@ -86,6 +86,7 @@ export const getSchedulesByClass = async (classId) => {
     .populate('class', 'class_name year section code')
     .populate('subject', 'full_name short_name code')
     .populate('teacher', 'name short_abbr')
+    .populate('room', 'name short_name code')
     .sort({ day_of_week: 1, start_time: 1 })
     .lean();
   return data;
@@ -103,7 +104,9 @@ export const getScheduleById = async (id) => {
 
 export const createSchedule = async (payload) => {
   const normalized = normalizePayload(payload);
-  await ensureTeacherCanTeachSubject(normalized.teacher, normalized.subject);
+  if (normalized.teacher && normalized.subject) {
+    await ensureTeacherCanTeachSubject(normalized.teacher, normalized.subject);
+  }
   const conflict = await checkConflicts(normalized);
   if (conflict) {
     const err = new Error(conflict.message);

@@ -11,6 +11,68 @@ function overlaps(slotStart, slotEnd, schedStart, schedEnd) {
   return slotStart < schedEnd && slotEnd > schedStart;
 }
 
+/** First letters of each word, uppercase (e.g. "Natural Language Processing" -> "NLP") */
+function shortNameFromFullName(fullName) {
+  if (!fullName || typeof fullName !== 'string') return '';
+  return fullName
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.charAt(0))
+    .join('')
+    .toUpperCase();
+}
+
+/**
+ * Returns { content: JSX, cellClass: string } for the timetable cell.
+ * Subject/Lecture: two-line, blue. Lab: single-line, purple.
+ */
+function renderCellContent(schedule) {
+  if (!schedule) return { content: null, cellClass: 'bg-white hover:bg-gray-50' };
+
+  const type = schedule.type || 'LECTURE';
+  const isLab = type === 'LAB';
+
+  if (isLab) {
+    const room = schedule.room;
+    const labName =
+      room?.short_name ||
+      room?.name ||
+      (room?.name ? shortNameFromFullName(room.name) : null) ||
+      room?.code ||
+      'Lab';
+    const teacherShortName = schedule.teacher?.short_abbr || schedule.teacher?.name || '';
+    const roomNo = room?.room_number || room?.code || room?.short_name || '—';
+    const singleLine = teacherShortName ? `${labName} (${teacherShortName}) / ${roomNo}` : `${labName} / ${roomNo}`;
+
+    return {
+      content: (
+        <span className="block font-semibold text-purple-900 text-sm leading-tight">
+          {singleLine}
+        </span>
+      ),
+      cellClass: 'bg-purple-100',
+    };
+  }
+
+  // LECTURE / SUBJECT
+  const subjectShortName =
+    schedule.subject?.short_name ||
+    schedule.subject?.code ||
+    (schedule.subject?.full_name ? shortNameFromFullName(schedule.subject.full_name) : null) ||
+    '—';
+  const teacherShortName = schedule.teacher?.short_abbr || schedule.teacher?.name || '';
+
+  return {
+    content: (
+      <span className="block text-blue-900">
+        <span className="font-semibold block">{subjectShortName} (L)</span>
+        <span className="text-xs text-blue-800/90">{teacherShortName}</span>
+      </span>
+    ),
+    cellClass: 'bg-blue-100',
+  };
+}
+
 export default function ScheduleGrid({ schedules = [], onCellClick }) {
   const cellMap = useMemo(() => {
     const map = new Map();
@@ -88,12 +150,8 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
                   }
                   const sched = cellMap.get(key);
                   const isFilled = !!sched;
-                  const subjectCode = sched?.subject?.code || sched?.subject?.short_name;
-                  const facultyName = sched?.teacher?.short_abbr || sched?.teacher?.name || '';
-                  const fillColors = ['bg-blue-50', 'bg-violet-50', 'bg-sky-50', 'bg-indigo-50'];
-                  const fillClass = isFilled
-                    ? fillColors[(subjectCode?.length || 0) % fillColors.length]
-                    : 'bg-white hover:bg-gray-50';
+                  const { content, cellClass } = renderCellContent(sched);
+                  const fillClass = isFilled ? cellClass : 'bg-white hover:bg-gray-50';
 
                   return (
                     <td
@@ -103,14 +161,10 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
                       <button
                         type="button"
                         onClick={() => onCellClick(day, slot, sched)}
-                        className="w-full min-h-[52px] p-2 text-left text-sm rounded transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                        className="w-full min-h-[52px] p-2 text-left rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
                       >
                         {isFilled ? (
-                          <span className="block">
-                            <span className="font-medium text-gray-900">{subjectCode}</span>
-                            <br />
-                            <span className="text-gray-600 text-xs">{facultyName}</span>
-                          </span>
+                          content
                         ) : (
                           <span className="text-gray-400 text-2xl font-light leading-none">+</span>
                         )}

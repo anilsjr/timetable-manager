@@ -9,6 +9,9 @@ export const getClassById = (id) =>
 export const getClassSubjects = (classId) =>
   api.get(`/api/classes/${classId}/subjects`).then((r) => r.data?.data ?? []);
 
+export const getClassLabs = (classId) =>
+  api.get(`/api/classes/${classId}/labs`).then((r) => r.data?.data ?? []);
+
 export const createClass = (data) =>
   api.post('/api/classes', data).then((r) => r.data);
 

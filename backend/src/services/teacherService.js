@@ -1,4 +1,31 @@
 import Teacher from '../models/Teacher.js';
+import Schedule from '../models/Schedule.js';
+
+/** Format Date to HH:mm (local hours/minutes) */
+function formatTimeLocal(d) {
+  const date = d instanceof Date ? d : new Date(d);
+  const h = date.getHours();
+  const m = date.getMinutes();
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+/**
+ * Returns teacher IDs that are already assigned at the given day + startTime.
+ * When excludeScheduleId is set (e.g. when editing), that schedule's teacher is not counted as busy.
+ */
+export async function getBusyTeacherIdsAtSlot(day, startTime, excludeScheduleId = null) {
+  const schedules = await Schedule.find({ day_of_week: day })
+    .select('teacher start_time _id')
+    .lean();
+  const busy = schedules.filter((s) => {
+    if (!s.teacher) return false;
+    const timeStr = formatTimeLocal(s.start_time);
+    if (timeStr !== startTime) return false;
+    if (excludeScheduleId && s._id.toString() === excludeScheduleId.toString()) return false;
+    return true;
+  });
+  return [...new Set(busy.map((s) => s.teacher.toString()))];
+}
 
 export const listTeachers = async ({ page = 1, limit = 10, search = '' }) => {
   const query = search
@@ -24,11 +51,20 @@ export const getTeacherById = async (id) => {
   return teacher;
 };
 
-export const getTeachersBySubject = async (subjectId) => {
-  const data = await Teacher.find({ subjects: subjectId })
+export const getTeachersBySubject = async (subjectId, options = {}) => {
+  const { day, startTime, excludeScheduleId } = options;
+  let data = await Teacher.find({ subjects: subjectId })
     .populate('subjects', 'full_name short_name code')
     .sort({ name: 1 })
     .lean();
+
+  if (day && startTime) {
+    const busyIds = await getBusyTeacherIdsAtSlot(day, startTime, excludeScheduleId);
+    if (busyIds.length) {
+      data = data.filter((t) => !busyIds.includes(t._id.toString()));
+    }
+  }
+
   return data;
 };
 

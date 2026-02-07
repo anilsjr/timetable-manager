@@ -28,6 +28,15 @@ export const getClassSubjects = async (req, res, next) => {
   }
 };
 
+export const getClassLabs = async (req, res, next) => {
+  try {
+    const labs = await classService.getClassLabs(req.params.classId);
+    res.json({ success: true, data: labs });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const create = async (req, res, next) => {
   try {
     const cls = await classService.createClass(req.body);

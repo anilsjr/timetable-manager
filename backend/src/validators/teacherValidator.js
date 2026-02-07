@@ -1,4 +1,7 @@
-import { body, param } from 'express-validator';
+import { body, param, query } from 'express-validator';
+
+const timePattern = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+const DAY_ENUM = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
 
 export const createTeacher = [
   body('name').trim().notEmpty().withMessage('Name is required'),
@@ -20,5 +23,12 @@ export const updateTeacher = [
 ];
 
 export const getById = [param('id').isMongoId().withMessage('Invalid teacher ID')];
-export const getTeachersBySubject = [param('subjectId').isMongoId().withMessage('Invalid subject ID')];
+
+export const getTeachersBySubject = [
+  param('subjectId').isMongoId().withMessage('Invalid subject ID'),
+  query('day').optional().isIn(DAY_ENUM),
+  query('startTime').optional().matches(timePattern),
+  query('excludeScheduleId').optional().isMongoId(),
+];
+
 export const deleteById = [param('id').isMongoId().withMessage('Invalid teacher ID')];

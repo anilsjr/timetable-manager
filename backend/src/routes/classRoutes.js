@@ -7,6 +7,7 @@ import {
   updateClass,
   getById,
   getClassSubjects,
+  getClassLabs,
   deleteById,
 } from '../validators/classValidator.js';
 
@@ -15,6 +16,7 @@ router.use(protect, adminOnly);
 
 router.get('/', controller.list);
 router.get('/:classId/subjects', getClassSubjects, validateRequest, controller.getClassSubjects);
+router.get('/:classId/labs', getClassLabs, validateRequest, controller.getClassLabs);
 router.get('/:id', getById, validateRequest, controller.getById);
 router.post('/', createClass, validateRequest, controller.create);
 router.put('/:id', updateClass, validateRequest, controller.update);
