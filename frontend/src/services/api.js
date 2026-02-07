@@ -13,6 +13,10 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    // FormData must use multipart boundary; do not force application/json
+    if (config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
     logger.debug('API request', config.method?.toUpperCase(), config.url, config.data ?? '');
     return config;
   },
