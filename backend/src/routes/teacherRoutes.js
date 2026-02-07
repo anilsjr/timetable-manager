@@ -6,6 +6,7 @@ import {
   createTeacher,
   updateTeacher,
   getById,
+  getTeachersBySubject,
   deleteById,
 } from '../validators/teacherValidator.js';
 
@@ -13,6 +14,7 @@ const router = express.Router();
 router.use(protect, adminOnly);
 
 router.get('/', controller.list);
+router.get('/by-subject/:subjectId', getTeachersBySubject, validateRequest, controller.getTeachersBySubject);
 router.get('/:id', getById, validateRequest, controller.getById);
 router.post('/', createTeacher, validateRequest, controller.create);
 router.put('/:id', updateTeacher, validateRequest, controller.update);

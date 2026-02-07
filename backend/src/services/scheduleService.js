@@ -1,15 +1,69 @@
 import Schedule from '../models/Schedule.js';
+import Teacher from '../models/Teacher.js';
 import { checkConflicts } from './conflictService.js';
+
+const REFERENCE_DATE = '1970-01-01';
+const DAY_MAP = { MON: 0, TUE: 1, WED: 2, THU: 3, FRI: 4, SAT: 5 };
+
+function toDate(dayOfWeek, timeStr) {
+  const base = new Date(REFERENCE_DATE);
+  base.setDate(base.getDate() + (DAY_MAP[dayOfWeek] ?? 0));
+  if (typeof timeStr === 'string' && timeStr.includes(':')) {
+    const [h, m] = timeStr.split(':').map(Number);
+    base.setHours(h || 0, m || 0, 0, 0);
+    return base;
+  }
+  const d = timeStr instanceof Date ? timeStr : new Date(timeStr);
+  base.setHours(d.getHours(), d.getMinutes(), 0, 0);
+  return base;
+}
+
+function normalizePayload(body) {
+  const classId = body.classId || body.class;
+  const subjectId = body.subjectId || body.subject;
+  const teacherId = body.teacherId || body.teacher;
+  const day = body.day || body.day_of_week;
+  const startTime = body.startTime || body.start_time;
+  const endTime = body.endTime || body.end_time;
+
+  const start_time =
+    typeof startTime === 'string' && startTime.length <= 5
+      ? toDate(day, startTime)
+      : new Date(startTime);
+  const end_time =
+    typeof endTime === 'string' && endTime.length <= 5 ? toDate(day, endTime) : new Date(endTime);
+
+  const normalized = {
+    class: classId,
+    subject: subjectId,
+    teacher: teacherId,
+    type: body.type,
+    day_of_week: day,
+    start_time,
+    end_time,
+  };
+  if (body.room !== undefined) normalized.room = body.room ?? null;
+  if (body.roomModel !== undefined) normalized.roomModel = body.roomModel ?? null;
+  return normalized;
+}
+
+async function ensureTeacherCanTeachSubject(teacherId, subjectId) {
+  const teacher = await Teacher.findById(teacherId).lean();
+  if (!teacher) throw new Error('Teacher not found');
+  const subjectIds = (teacher.subjects || []).map((s) => (s && typeof s === 'object' && s.toString ? s.toString() : String(s)));
+  if (!subjectIds.length || !subjectIds.includes(String(subjectId))) {
+    const err = new Error('Teacher not allowed to teach this subject');
+    err.code = 400;
+    throw err;
+  }
+}
 
 export const listSchedules = async ({ page = 1, limit = 10, search = '', classId, teacherId }) => {
   const query = {};
   if (classId) query.class = classId;
   if (teacherId) query.teacher = teacherId;
-  if (search) {
-    // Search by day or other fields - for now keep simple
-    if (['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].includes(search.toUpperCase())) {
-      query.day_of_week = search.toUpperCase();
-    }
+  if (search && ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].includes(search.toUpperCase())) {
+    query.day_of_week = search.toUpperCase();
   }
 
   const skip = (page - 1) * limit;
@@ -48,23 +102,34 @@ export const getScheduleById = async (id) => {
 };
 
 export const createSchedule = async (payload) => {
-  const conflict = await checkConflicts(payload);
+  const normalized = normalizePayload(payload);
+  await ensureTeacherCanTeachSubject(normalized.teacher, normalized.subject);
+  const conflict = await checkConflicts(normalized);
   if (conflict) {
     const err = new Error(conflict.message);
     err.conflict = conflict;
     throw err;
   }
-  return Schedule.create(payload);
+  const doc = await Schedule.create(normalized);
+  return Schedule.findById(doc._id)
+    .populate('class', 'class_name year section code')
+    .populate('subject', 'full_name short_name code')
+    .populate('teacher', 'name short_abbr')
+    .lean();
 };
 
 export const updateSchedule = async (id, payload) => {
-  const conflict = await checkConflicts(payload, id);
+  const normalized = normalizePayload(payload);
+  if (normalized.teacher && normalized.subject) {
+    await ensureTeacherCanTeachSubject(normalized.teacher, normalized.subject);
+  }
+  const conflict = await checkConflicts(normalized, id);
   if (conflict) {
     const err = new Error(conflict.message);
     err.conflict = conflict;
     throw err;
   }
-  const schedule = await Schedule.findByIdAndUpdate(id, payload, {
+  const schedule = await Schedule.findByIdAndUpdate(id, normalized, {
     new: true,
     runValidators: true,
   })

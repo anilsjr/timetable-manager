@@ -8,14 +8,12 @@ const scheduleSchema = new mongoose.Schema(
     class: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', required: true },
     subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', required: true },
     teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', required: true },
-    room: { type: mongoose.Schema.Types.ObjectId, refPath: 'roomModel', required: true },
-    roomModel: { type: String, enum: ['Room', 'Lab'], required: true },
+    room: { type: mongoose.Schema.Types.ObjectId, refPath: 'roomModel', default: null },
+    roomModel: { type: String, enum: ['Room', 'Lab'], default: null },
     type: { type: String, enum: TYPE_ENUM, required: true },
     day_of_week: { type: String, enum: DAY_ENUM, required: true },
     start_time: { type: Date, required: true },
     end_time: { type: Date, required: true },
-    semester_start: { type: Date, required: true },
-    semester_end: { type: Date, required: true },
   },
   { timestamps: true }
 );

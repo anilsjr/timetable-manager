@@ -86,10 +86,6 @@ async function seed() {
     ]);
     console.log('Created labs:', labs.length);
 
-    // Sample schedules (Jan-June 2026)
-    const semesterStart = new Date('2026-01-01');
-    const semesterEnd = new Date('2026-06-30');
-
     const createTime = (dateStr, h, m) => {
       const d = new Date(dateStr);
       d.setHours(h, m, 0, 0);
@@ -97,9 +93,9 @@ async function seed() {
     };
 
     const schedules = [
-      { class: classes[0]._id, subject: subjects[3]._id, teacher: teachers[3]._id, room: rooms[0]._id, roomModel: 'Room', type: 'LECTURE', day_of_week: 'MON', start_time: createTime('2026-01-05', 9, 45), end_time: createTime('2026-01-05', 10, 35), semester_start: semesterStart, semester_end: semesterEnd },
-      { class: classes[0]._id, subject: subjects[4]._id, teacher: teachers[4]._id, room: rooms[0]._id, roomModel: 'Room', type: 'LECTURE', day_of_week: 'MON', start_time: createTime('2026-01-05', 10, 35), end_time: createTime('2026-01-05', 11, 25), semester_start: semesterStart, semester_end: semesterEnd },
-      { class: classes[0]._id, subject: subjects[0]._id, teacher: teachers[0]._id, room: labs[0]._id, roomModel: 'Lab', type: 'LAB', day_of_week: 'TUE', start_time: createTime('2026-01-06', 9, 45), end_time: createTime('2026-01-06', 11, 25), semester_start: semesterStart, semester_end: semesterEnd },
+      { class: classes[0]._id, subject: subjects[3]._id, teacher: teachers[3]._id, room: rooms[0]._id, roomModel: 'Room', type: 'LECTURE', day_of_week: 'MON', start_time: createTime('2026-01-05', 9, 45), end_time: createTime('2026-01-05', 10, 35) },
+      { class: classes[0]._id, subject: subjects[4]._id, teacher: teachers[4]._id, room: rooms[0]._id, roomModel: 'Room', type: 'LECTURE', day_of_week: 'MON', start_time: createTime('2026-01-05', 10, 35), end_time: createTime('2026-01-05', 11, 25) },
+      { class: classes[0]._id, subject: subjects[0]._id, teacher: teachers[0]._id, room: labs[0]._id, roomModel: 'Lab', type: 'LAB', day_of_week: 'TUE', start_time: createTime('2026-01-06', 9, 45), end_time: createTime('2026-01-06', 11, 25) },
     ];
 
     await Schedule.insertMany(schedules);

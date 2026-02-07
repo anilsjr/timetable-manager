@@ -6,6 +6,7 @@ import {
   createClass,
   updateClass,
   getById,
+  getClassSubjects,
   deleteById,
 } from '../validators/classValidator.js';
 
@@ -13,6 +14,7 @@ const router = express.Router();
 router.use(protect, adminOnly);
 
 router.get('/', controller.list);
+router.get('/:classId/subjects', getClassSubjects, validateRequest, controller.getClassSubjects);
 router.get('/:id', getById, validateRequest, controller.getById);
 router.post('/', createClass, validateRequest, controller.create);
 router.put('/:id', updateClass, validateRequest, controller.update);

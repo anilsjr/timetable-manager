@@ -20,4 +20,5 @@ export const updateTeacher = [
 ];
 
 export const getById = [param('id').isMongoId().withMessage('Invalid teacher ID')];
+export const getTeachersBySubject = [param('subjectId').isMongoId().withMessage('Invalid subject ID')];
 export const deleteById = [param('id').isMongoId().withMessage('Invalid teacher ID')];

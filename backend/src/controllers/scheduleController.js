@@ -39,6 +39,9 @@ export const create = async (req, res, next) => {
     const schedule = await scheduleService.createSchedule(req.body);
     res.status(201).json({ success: true, data: schedule });
   } catch (error) {
+    if (error.code === 400) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     if (error.conflict) {
       return res.status(409).json({
         success: false,
@@ -55,6 +58,9 @@ export const update = async (req, res, next) => {
     const schedule = await scheduleService.updateSchedule(req.params.id, req.body);
     res.json({ success: true, data: schedule });
   } catch (error) {
+    if (error.code === 400) {
+      return res.status(400).json({ success: false, error: error.message });
+    }
     if (error.conflict) {
       return res.status(409).json({
         success: false,

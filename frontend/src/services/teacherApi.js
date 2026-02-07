@@ -6,6 +6,9 @@ export const getTeachers = (params) =>
 export const getTeacherById = (id) =>
   api.get(`/api/teachers/${id}`).then((r) => r.data);
 
+export const getTeachersBySubject = (subjectId) =>
+  api.get(`/api/teachers/by-subject/${subjectId}`).then((r) => r.data?.data ?? []);
+
 export const createTeacher = (data) =>
   api.post('/api/teachers', data).then((r) => r.data);
 

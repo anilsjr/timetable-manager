@@ -19,6 +19,15 @@ export const getById = async (req, res, next) => {
   }
 };
 
+export const getTeachersBySubject = async (req, res, next) => {
+  try {
+    const teachers = await teacherService.getTeachersBySubject(req.params.subjectId);
+    res.json({ success: true, data: teachers });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const create = async (req, res, next) => {
   try {
     const teacher = await teacherService.createTeacher(req.body);

@@ -24,6 +24,14 @@ export const getTeacherById = async (id) => {
   return teacher;
 };
 
+export const getTeachersBySubject = async (subjectId) => {
+  const data = await Teacher.find({ subjects: subjectId })
+    .populate('subjects', 'full_name short_name code')
+    .sort({ name: 1 })
+    .lean();
+  return data;
+};
+
 export const createTeacher = async (payload) => Teacher.create(payload);
 export const updateTeacher = async (id, payload) => {
   const teacher = await Teacher.findByIdAndUpdate(id, payload, {

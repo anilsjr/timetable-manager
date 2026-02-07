@@ -31,6 +31,14 @@ export const getClassById = async (id) => {
   return cls;
 };
 
+export const getClassSubjects = async (classId) => {
+  const cls = await ClassModel.findById(classId)
+    .populate('subjects', 'code short_name full_name')
+    .lean();
+  if (!cls) throw new Error('Class not found');
+  return cls.subjects || [];
+};
+
 export const createClass = async (payload) => {
   const { subjects, labs, ...rest } = payload;
   const doc = { ...rest, subjects: subjects || [], labs: labs || [] };
