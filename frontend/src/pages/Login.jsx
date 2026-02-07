@@ -8,8 +8,8 @@ import { useAuth } from '../context/AuthContext';
 import logger from '../utils/logger.js';
 
 const schema = z.object({
-  email: z.string().email('Valid email required'),
-  password: z.string().min(1, 'Password required'),
+  email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
+  password: z.string().min(1, 'Password is required'),
 });
 
 export default function Login() {
@@ -23,6 +23,7 @@ export default function Login() {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(schema),
+    mode: 'onTouched',
     defaultValues: { email: 'admin@ips.academy', password: 'admin123' },
   });
 
@@ -33,9 +34,9 @@ export default function Login() {
       toast.success('Logged in successfully');
       navigate('/');
     } catch (err) {
-      const msg = err.response?.data?.error || err.response?.data?.message || 'Login failed';
+      const msg = err.response?.data?.error || err.response?.data?.message || err.message || 'Login failed. Please check your email and password.';
       logger.warn('Login failed', { email: data.email, status: err.response?.status, message: msg });
-      toast.error(msg);
+      toast.error(msg, { duration: 4000 });
     } finally {
       setLoading(false);
     }
@@ -55,11 +56,17 @@ export default function Login() {
             <input
               {...register('email')}
               type="email"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className={`w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${
+                errors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
               placeholder="admin@ips.academy"
+              aria-invalid={!!errors.email}
+              aria-describedby={errors.email ? 'email-error' : undefined}
             />
             {errors.email && (
-              <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>
+              <p id="email-error" className="text-red-600 text-sm mt-1" role="alert">
+                {errors.email.message}
+              </p>
             )}
           </div>
           <div>
@@ -69,11 +76,17 @@ export default function Login() {
             <input
               {...register('password')}
               type="password"
-              className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className={`w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none ${
+                errors.password ? 'border-red-500 bg-red-50' : 'border-gray-300'
+              }`}
               placeholder="••••••••"
+              aria-invalid={!!errors.password}
+              aria-describedby={errors.password ? 'password-error' : undefined}
             />
             {errors.password && (
-              <p className="text-red-500 text-sm mt-1">{errors.password.message}</p>
+              <p id="password-error" className="text-red-600 text-sm mt-1" role="alert">
+                {errors.password.message}
+              </p>
             )}
           </div>
           <button
