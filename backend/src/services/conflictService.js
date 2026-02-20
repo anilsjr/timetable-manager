@@ -146,22 +146,5 @@ export async function checkConflicts(payload, excludeId = null) {
     }
   }
 
-  if (subjectId) {
-    const subject = await Subject.findById(subjectId).lean();
-    const requiredFreq = subject?.weekly_frequency ?? 0;
-    const existingCount = await Schedule.countDocuments({
-      class: classId,
-      subject: subjectId,
-      ...(excludeId ? { _id: { $ne: excludeId } } : {}),
-    });
-    if (requiredFreq > 0 && existingCount >= requiredFreq) {
-      return {
-        type: 'WEEKLY_FREQUENCY_EXCEEDED',
-        message: `Subject already has ${existingCount} sessions per week (max ${requiredFreq})`,
-        conflict_id: '',
-      };
-    }
-  }
-
   return null;
 }

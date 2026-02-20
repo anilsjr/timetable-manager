@@ -41,14 +41,14 @@ async function seed() {
 
     // Subjects (from IPS timetable)
     const subjects = await Subject.insertMany([
-      { full_name: 'Natural Language Processing', short_name: 'NLP', code: 'PCC CL13', weekly_frequency: 2, duration: 50 },
-      { full_name: 'Automata and Compiler Design', short_name: 'ACD', code: 'PCC CL15', weekly_frequency: 2, duration: 50 },
-      { full_name: 'Introduction to Data Science', short_name: 'IDS', code: 'PCC CL14', weekly_frequency: 2, duration: 50 },
-      { full_name: 'Software Engineering', short_name: 'SE', code: 'PEC CL02', weekly_frequency: 2, duration: 50 },
-      { full_name: 'Scientific Aptitude', short_name: 'SA', code: 'IOC MA01', weekly_frequency: 2, duration: 50 },
-      { full_name: 'Intellectual Property Rights', short_name: 'IPR', code: 'MLC MLC04', weekly_frequency: 1, duration: 50 },
-      { full_name: 'Data Analytics using tools', short_name: 'DAT', code: 'LC CL14', weekly_frequency: 2, duration: 100 },
-      { full_name: 'Japanese/French', short_name: 'LLC', code: 'HSMC HS05', weekly_frequency: 1, duration: 50 },
+      { full_name: 'Natural Language Processing', short_name: 'NLP', code: 'PCC CL13' },
+      { full_name: 'Automata and Compiler Design', short_name: 'ACD', code: 'PCC CL15' },
+      { full_name: 'Introduction to Data Science', short_name: 'IDS', code: 'PCC CL14' },
+      { full_name: 'Software Engineering', short_name: 'SE', code: 'PEC CL02' },
+      { full_name: 'Scientific Aptitude', short_name: 'SA', code: 'IOC MA01' },
+      { full_name: 'Intellectual Property Rights', short_name: 'IPR', code: 'MLC MLC04' },
+      { full_name: 'Data Analytics using tools', short_name: 'DAT', code: 'LC CL14' },
+      { full_name: 'Japanese/French', short_name: 'LLC', code: 'HSMC HS05' },
     ]);
     console.log('Created subjects:', subjects.length);
 

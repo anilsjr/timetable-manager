@@ -46,20 +46,18 @@ If some rows fail (e.g. duplicate code), `details.errors` lists `{ row, message 
 | full_name         | Yes      | Full subject name |
 | short_name        | Yes      | Short name / abbreviation |
 | code              | Yes      | Unique code (e.g. PCC CL13) |
-| weekly_frequency  | No       | Default 1 |
-| duration          | No       | Minutes per slot, default 50 |
 
 **CSV example:**
 ```csv
-full_name,short_name,code,weekly_frequency,duration
-Natural Language Processing,NLP,PCC CL13,2,50
-Software Engineering,SE,PEC CL02,2,50
+full_name,short_name,code
+Natural Language Processing,NLP,PCC CL13
+Software Engineering,SE,PEC CL02
 ```
 
 **JSON example:**
 ```json
 [
-  { "full_name": "NLP", "short_name": "NLP", "code": "PCC CL13", "weekly_frequency": 2, "duration": 50 }
+  { "full_name": "NLP", "short_name": "NLP", "code": "PCC CL13" }
 ]
 ```
 

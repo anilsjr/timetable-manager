@@ -146,7 +146,6 @@ Schedule creation/update is validated against:
 5. Valid semester range
 6. Lunch break restriction (13:00–14:00)
 7. Capacity constraint
-8. Weekly frequency validation
 
 ## License
 

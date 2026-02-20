@@ -60,6 +60,7 @@ export default function Teachers() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [subjects, setSubjects] = useState([]);
+  const [subjectSearch, setSubjectSearch] = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -102,6 +103,7 @@ export default function Teachers() {
   const openCreate = () => {
     setEditing(null);
     reset({ name: '', short_abbr: '', code: '', subjects: [], max_load_per_day: null });
+    setSubjectSearch('');
     setModalOpen(true);
   };
 
@@ -114,6 +116,7 @@ export default function Teachers() {
       subjects: (row.subjects || []).map((s) => (typeof s === 'object' ? s._id : s)),
       max_load_per_day: row.max_load_per_day ?? null,
     });
+    setSubjectSearch('');
     setModalOpen(true);
   };
 
@@ -215,36 +218,61 @@ export default function Teachers() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Subjects</label>
             <p className="text-xs text-gray-500 mb-2">Select the subjects this teacher teaches</p>
+            {subjects.length > 0 && (
+              <input
+                type="text"
+                placeholder="Search subjects..."
+                value={subjectSearch}
+                onChange={(e) => setSubjectSearch(e.target.value)}
+                className="w-full px-3 py-2 mb-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+            )}
             <div className="border rounded p-3 max-h-48 overflow-y-auto bg-gray-50 space-y-2">
               {subjects.length === 0 ? (
                 <p className="text-sm text-gray-500">No subjects available. Add subjects first.</p>
               ) : (
-                subjects.map((s) => {
-                  const selected = (watch('subjects') || []).includes(s._id);
-                  return (
-                    <label
-                      key={s._id}
-                      className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded px-2 py-1.5 -mx-2"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={(e) => {
-                          const current = watch('subjects') || [];
-                          if (e.target.checked) {
-                            setValue('subjects', [...current, s._id]);
-                          } else {
-                            setValue('subjects', current.filter((id) => id !== s._id));
-                          }
-                        }}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      />
-                      <span className="text-sm">
-                        {s.short_name} ({s.code})
-                      </span>
-                    </label>
-                  );
-                })
+                (() => {
+                  const filteredSubjects = subjects.filter((s) => {
+                    if (!subjectSearch.trim()) return true;
+                    const searchLower = subjectSearch.toLowerCase();
+                    return (
+                      s.full_name?.toLowerCase().includes(searchLower) ||
+                      s.short_name?.toLowerCase().includes(searchLower) ||
+                      s.code?.toLowerCase().includes(searchLower)
+                    );
+                  });
+
+                  if (filteredSubjects.length === 0) {
+                    return <p className="text-sm text-gray-500">No subjects found matching "{subjectSearch}"</p>;
+                  }
+
+                  return filteredSubjects.map((s) => {
+                    const selected = (watch('subjects') || []).includes(s._id);
+                    return (
+                      <label
+                        key={s._id}
+                        className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded px-2 py-1.5 -mx-2"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={(e) => {
+                            const current = watch('subjects') || [];
+                            if (e.target.checked) {
+                              setValue('subjects', [...current, s._id]);
+                            } else {
+                              setValue('subjects', current.filter((id) => id !== s._id));
+                            }
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm">
+                          {s.short_name} ({s.code})
+                        </span>
+                      </label>
+                    );
+                  });
+                })()
               )}
             </div>
           </div>

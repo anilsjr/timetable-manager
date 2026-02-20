@@ -69,9 +69,6 @@ function normalizeHeaders(rows) {
       shortabbr: 'short_abbr',
       short_abbr: 'short_abbr',
       abbreviation: 'short_abbr',
-      weekly_frequency: 'weekly_frequency',
-      weeklyfrequency: 'weekly_frequency',
-      frequency: 'weekly_frequency',
       room_number: 'room_number',
       roomnumber: 'room_number',
       max_load_per_day: 'max_load_per_day',
@@ -95,18 +92,16 @@ function normalizeHeaders(rows) {
 }
 
 /**
- * Subject row: full_name, short_name, code, weekly_frequency, duration (optional).
+ * Subject row: full_name, short_name, code.
  */
 function toSubjectDoc(row) {
   const full_name = row.full_name ?? row.name;
   const short_name = row.short_name ?? row.shortname;
   const code = row.code;
-  const weekly_frequency = num(row.weekly_frequency, 1);
-  const duration = num(row.duration, 50);
   if (!full_name || !short_name || !code) {
     throw new Error(`Subject row missing required field: full_name, short_name, code. Got: ${JSON.stringify(row)}`);
   }
-  return { full_name: String(full_name).trim(), short_name: String(short_name).trim(), code: String(code).trim(), weekly_frequency, duration };
+  return { full_name: String(full_name).trim(), short_name: String(short_name).trim(), code: String(code).trim() };
 }
 
 /**

@@ -136,7 +136,7 @@ export default function Import() {
         <h3 className="font-medium text-gray-800 mb-2">Expected columns</h3>
         <p className="space-x-1">
           {importType === 'subjects' && (
-            <>Subjects: <code className="bg-white px-1 rounded">full_name</code>, <code className="bg-white px-1 rounded">short_name</code>, <code className="bg-white px-1 rounded">code</code>, <code className="bg-white px-1 rounded">weekly_frequency</code>, <code className="bg-white px-1 rounded">duration</code></>
+            <>Subjects: <code className="bg-white px-1 rounded">full_name</code>, <code className="bg-white px-1 rounded">short_name</code>, <code className="bg-white px-1 rounded">code</code></>
           )}
           {importType === 'teachers' && (
             <>Teachers: <code className="bg-white px-1 rounded">name</code>, <code className="bg-white px-1 rounded">short_abbr</code>, <code className="bg-white px-1 rounded">code</code>, <code className="bg-white px-1 rounded">max_load_per_day</code>, <code className="bg-white px-1 rounded">subjects</code> (comma-separated subject codes). Import subjects first.</>

@@ -120,7 +120,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Natural Language Processing\",\n  \"short_name\": \"NLP\",\n  \"code\": \"PCC CL13\",\n  \"weekly_frequency\": 2,\n  \"duration\": 50\n}"
+              "raw": "{\n  \"full_name\": \"Natural Language Processing\",\n  \"short_name\": \"NLP\",\n  \"code\": \"PCC CL13\"\n}"
             },
             "url": "{{baseUrl}}/api/subjects",
             "description": "Create new subject"
@@ -133,7 +133,7 @@
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"Natural Language Processing\",\n  \"short_name\": \"NLP\",\n  \"code\": \"PCC CL13\",\n  \"weekly_frequency\": 2,\n  \"duration\": 50\n}"
+              "raw": "{\n  \"full_name\": \"Natural Language Processing\",\n  \"short_name\": \"NLP\",\n  \"code\": \"PCC CL13\"\n}"
             },
             "url": "{{baseUrl}}/api/subjects/:id",
             "description": "Update subject"

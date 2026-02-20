@@ -95,7 +95,7 @@ export const getSchedulesByClass = async (classId) => {
 export const getScheduleById = async (id) => {
   const schedule = await Schedule.findById(id)
     .populate('class', 'class_name year section code student_count')
-    .populate('subject', 'full_name short_name code weekly_frequency')
+    .populate('subject', 'full_name short_name code')
     .populate('teacher', 'name short_abbr')
     .lean();
   if (!schedule) throw new Error('Schedule not found');
