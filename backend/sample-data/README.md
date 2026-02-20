@@ -1,6 +1,14 @@
 # Sample Data Import Files
 
-This folder contains sample CSV files that demonstrate the correct format for importing data into the Timetable IPS system.
+This folder contains sample CSV and JSON files that demonstrate the correct format for importing data into the Timetable IPS system.
+
+## Available Formats
+
+Each import type has sample files in both formats:
+- **CSV format** (`*-sample.csv`) - Comma-separated values
+- **JSON format** (`*-sample.json`) - Array of objects
+
+Both formats contain the same data and can be used interchangeably.
 
 ## Import Order
 
@@ -27,6 +35,22 @@ Import subjects/courses offered by the institution.
 full_name,short_name,code
 "Introduction to Computer Science",Intro CS,CS101
 "Data Structures and Algorithms",DSA,CS102
+```
+
+**JSON Example:**
+```json
+[
+  {
+    "full_name": "Introduction to Computer Science",
+    "short_name": "Intro CS",
+    "code": "CS101"
+  },
+  {
+    "full_name": "Data Structures and Algorithms",
+    "short_name": "DSA",
+    "code": "CS102"
+  }
+]
 ```
 
 ### 2. labs-import-sample.csv
@@ -169,9 +193,13 @@ curl -X POST http://localhost:5000/api/import/classes \
 
 ## Supported File Formats
 
-- **CSV** (.csv) - Comma-separated values
+The import system accepts three file formats:
+
+- **CSV** (.csv) - Comma-separated values (e.g., `subjects-import-sample.csv`)
 - **Excel** (.xlsx, .xls) - Microsoft Excel format
-- **JSON** (.json) - Must be an array of objects
+- **JSON** (.json) - Array of objects (e.g., `subjects-import-sample.json`)
+
+All sample files are provided in both CSV and JSON formats for your convenience.
 
 ## Field Name Aliases
 

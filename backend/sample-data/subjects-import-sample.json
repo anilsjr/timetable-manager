@@ -1,0 +1,107 @@
+[
+  {
+    "full_name": "Introduction to Computer Science",
+    "short_name": "Intro CS",
+    "code": "CS101"
+  },
+  {
+    "full_name": "Data Structures and Algorithms",
+    "short_name": "DSA",
+    "code": "CS102"
+  },
+  {
+    "full_name": "Database Management Systems",
+    "short_name": "DBMS",
+    "code": "CS103"
+  },
+  {
+    "full_name": "Advanced Computer Science",
+    "short_name": "Adv CS",
+    "code": "CS201"
+  },
+  {
+    "full_name": "Operating Systems",
+    "short_name": "OS",
+    "code": "CS301"
+  },
+  {
+    "full_name": "Calculus I",
+    "short_name": "Calc 1",
+    "code": "MATH101"
+  },
+  {
+    "full_name": "Linear Algebra",
+    "short_name": "Lin Alg",
+    "code": "MATH201"
+  },
+  {
+    "full_name": "Discrete Mathematics",
+    "short_name": "Discrete Math",
+    "code": "MATH301"
+  },
+  {
+    "full_name": "Physics I",
+    "short_name": "Physics 1",
+    "code": "PHY101"
+  },
+  {
+    "full_name": "Electromagnetism",
+    "short_name": "EM",
+    "code": "PHY201"
+  },
+  {
+    "full_name": "Quantum Physics",
+    "short_name": "Quantum",
+    "code": "PHY301"
+  },
+  {
+    "full_name": "Chemistry I",
+    "short_name": "Chem 1",
+    "code": "CHE101"
+  },
+  {
+    "full_name": "Organic Chemistry",
+    "short_name": "Organic",
+    "code": "CHE102"
+  },
+  {
+    "full_name": "Physical Chemistry",
+    "short_name": "Phys Chem",
+    "code": "CHE201"
+  },
+  {
+    "full_name": "Biology I",
+    "short_name": "Bio 1",
+    "code": "BIO101"
+  },
+  {
+    "full_name": "Microbiology",
+    "short_name": "Micro Bio",
+    "code": "BIO201"
+  },
+  {
+    "full_name": "Genetics",
+    "short_name": "Genetics",
+    "code": "BIO301"
+  },
+  {
+    "full_name": "English Communication",
+    "short_name": "Eng Com",
+    "code": "ENG101"
+  },
+  {
+    "full_name": "Technical Writing",
+    "short_name": "Tech Write",
+    "code": "ENG102"
+  },
+  {
+    "full_name": "Electronics I",
+    "short_name": "Elect 1",
+    "code": "ELE201"
+  },
+  {
+    "full_name": "Digital Electronics",
+    "short_name": "Digital",
+    "code": "ELE301"
+  }
+]

@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Computer Science Lab 1",
+    "short_name": "CS Lab 1",
+    "code": "LAB-CS1",
+    "room_number": "101",
+    "capacity": 60
+  },
+  {
+    "name": "Computer Science Lab 2",
+    "short_name": "CS Lab 2",
+    "code": "LAB-CS2",
+    "room_number": "102",
+    "capacity": 60
+  },
+  {
+    "name": "Physics Lab",
+    "short_name": "Physics Lab",
+    "code": "LAB-PHY",
+    "room_number": "201",
+    "capacity": 40
+  },
+  {
+    "name": "Chemistry Lab",
+    "short_name": "Chem Lab",
+    "code": "LAB-CHE",
+    "room_number": "202",
+    "capacity": 40
+  },
+  {
+    "name": "Biology Lab",
+    "short_name": "Bio Lab",
+    "code": "LAB-BIO",
+    "room_number": "203",
+    "capacity": 35
+  },
+  {
+    "name": "Electronics Lab",
+    "short_name": "Elect Lab",
+    "code": "LAB-ELE",
+    "room_number": "301",
+    "capacity": 50
+  },
+  {
+    "name": "Networking Lab",
+    "short_name": "Network Lab",
+    "code": "LAB-NET",
+    "room_number": "302",
+    "capacity": 45
+  },
+  {
+    "name": "Data Science Lab",
+    "short_name": "DS Lab",
+    "code": "LAB-DS",
+    "room_number": "103",
+    "capacity": 55
+  },
+  {
+    "name": "AI/ML Lab",
+    "short_name": "AI Lab",
+    "code": "LAB-AI",
+    "room_number": "104",
+    "capacity": 50
+  },
+  {
+    "name": "Robotics Lab",
+    "short_name": "Robot Lab",
+    "code": "LAB-ROB",
+    "room_number": "303",
+    "capacity": 30
+  }
+]

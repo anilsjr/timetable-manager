@@ -4,11 +4,12 @@ const ENDPOINTS = {
   subjects: '/api/import/subjects',
   teachers: '/api/import/teachers',
   labs: '/api/import/labs',
+  classes: '/api/import/classes',
 };
 
 /**
  * Upload a file to import data.
- * @param {'subjects'|'teachers'|'labs'} type
+ * @param {'subjects'|'teachers'|'labs'|'classes'} type
  * @param {File} file - CSV, Excel (.xlsx/.xls), or JSON
  * @returns {Promise<{ success: boolean, created: number, errors: number, total: number, details?: { errors: Array<{ row: number, message: string }> } }>}
  */

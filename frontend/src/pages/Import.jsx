@@ -6,6 +6,7 @@ const IMPORT_TYPES = [
   { value: 'subjects', label: 'Subjects' },
   { value: 'teachers', label: 'Teachers' },
   { value: 'labs', label: 'Labs' },
+  { value: 'classes', label: 'Classes' },
 ];
 
 const ACCEPT = '.csv,.xlsx,.xls,application/json,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
@@ -60,7 +61,7 @@ export default function Import() {
     <div className="p-6 max-w-2xl">
       <h1 className="text-2xl font-bold text-gray-800 mb-2">Import Data</h1>
       <p className="text-gray-600 mb-6">
-        Upload a CSV, Excel (.xlsx/.xls), or JSON file to import Subjects, Teachers, or Labs. Ensure columns match the expected format.
+        Upload a CSV, Excel (.xlsx/.xls), or JSON file to import Subjects, Teachers, Labs, or Classes. Ensure columns match the expected format.
       </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -143,6 +144,9 @@ export default function Import() {
           )}
           {importType === 'labs' && (
             <>Labs: <code className="bg-white px-1 rounded">name</code>, <code className="bg-white px-1 rounded">short_name</code>, <code className="bg-white px-1 rounded">code</code>, <code className="bg-white px-1 rounded">room_number</code>, <code className="bg-white px-1 rounded">capacity</code></>
+          )}
+          {importType === 'classes' && (
+            <>Classes: <code className="bg-white px-1 rounded">class_name</code>, <code className="bg-white px-1 rounded">year</code> (1-4), <code className="bg-white px-1 rounded">section</code> ('1'-'4'), <code className="bg-white px-1 rounded">student_count</code>, <code className="bg-white px-1 rounded">subjects</code> (comma-separated codes), <code className="bg-white px-1 rounded">labs</code> (comma-separated codes). Import subjects and labs first.</>
           )}
         </p>
       </div>

@@ -1,0 +1,122 @@
+[
+  {
+    "class_name": "BCA",
+    "year": 1,
+    "section": "1",
+    "student_count": 45,
+    "subjects": "CS101,MATH101,ENG101",
+    "labs": "LAB-CS1,LAB-DS"
+  },
+  {
+    "class_name": "BCA",
+    "year": 1,
+    "section": "2",
+    "student_count": 42,
+    "subjects": "CS101,MATH101,ENG101",
+    "labs": "LAB-CS2,LAB-DS"
+  },
+  {
+    "class_name": "BCA",
+    "year": 2,
+    "section": "1",
+    "student_count": 40,
+    "subjects": "CS201,MATH201,PHY101",
+    "labs": "LAB-CS1,LAB-NET"
+  },
+  {
+    "class_name": "BCA",
+    "year": 2,
+    "section": "2",
+    "student_count": 38,
+    "subjects": "CS201,MATH201,PHY101",
+    "labs": "LAB-CS2,LAB-NET"
+  },
+  {
+    "class_name": "BCA",
+    "year": 3,
+    "section": "1",
+    "student_count": 35,
+    "subjects": "CS301,CS102,ELE201",
+    "labs": "LAB-AI,LAB-NET"
+  },
+  {
+    "class_name": "BCA",
+    "year": 3,
+    "section": "2",
+    "student_count": 33,
+    "subjects": "CS301,CS102,ELE201",
+    "labs": "LAB-DS,LAB-ROB"
+  },
+  {
+    "class_name": "MCA",
+    "year": 1,
+    "section": "1",
+    "student_count": 30,
+    "subjects": "CS201,MATH301,CS103",
+    "labs": "LAB-AI,LAB-DS"
+  },
+  {
+    "class_name": "MCA",
+    "year": 2,
+    "section": "1",
+    "student_count": 28,
+    "subjects": "CS301,CS102,PHY201",
+    "labs": "LAB-AI,LAB-NET,LAB-ROB"
+  },
+  {
+    "class_name": "BSc",
+    "year": 1,
+    "section": "1",
+    "student_count": 50,
+    "subjects": "PHY101,CHE101,MATH101",
+    "labs": "LAB-PHY,LAB-CHE"
+  },
+  {
+    "class_name": "BSc",
+    "year": 2,
+    "section": "1",
+    "student_count": 48,
+    "subjects": "PHY201,CHE102,BIO201",
+    "labs": "LAB-PHY,LAB-BIO"
+  },
+  {
+    "class_name": "BSc",
+    "year": 3,
+    "section": "1",
+    "student_count": 45,
+    "subjects": "PHY301,BIO301,CHE201",
+    "labs": "LAB-PHY,LAB-BIO,LAB-CHE"
+  },
+  {
+    "class_name": "BTech",
+    "year": 1,
+    "section": "1",
+    "student_count": 60,
+    "subjects": "CS101,PHY101,MATH101,ENG101",
+    "labs": "LAB-CS1,LAB-PHY"
+  },
+  {
+    "class_name": "BTech",
+    "year": 1,
+    "section": "2",
+    "student_count": 58,
+    "subjects": "CS101,PHY101,MATH101,ENG101",
+    "labs": "LAB-CS2,LAB-ELE"
+  },
+  {
+    "class_name": "BTech",
+    "year": 2,
+    "section": "1",
+    "student_count": 55,
+    "subjects": "CS201,ELE201,MATH201",
+    "labs": "LAB-ELE,LAB-NET"
+  },
+  {
+    "class_name": "BTech",
+    "year": 3,
+    "section": "1",
+    "student_count": 52,
+    "subjects": "CS301,ELE301,PHY201",
+    "labs": "LAB-AI,LAB-ROB"
+  }
+]

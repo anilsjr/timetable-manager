@@ -1,0 +1,72 @@
+[
+  {
+    "name": "Dr. Rajesh Kumar",
+    "short_abbr": "DRK",
+    "code": "TCH001",
+    "max_load_per_day": 6,
+    "subjects": "CS101,CS102,CS103"
+  },
+  {
+    "name": "Prof. Anjali Sharma",
+    "short_abbr": "PAS",
+    "code": "TCH002",
+    "max_load_per_day": 5,
+    "subjects": "MATH201,MATH202"
+  },
+  {
+    "name": "Dr. Vikram Singh",
+    "short_abbr": "DVS",
+    "code": "TCH003",
+    "max_load_per_day": 6,
+    "subjects": "PHY101,PHY102"
+  },
+  {
+    "name": "Prof. Priya Patel",
+    "short_abbr": "PPP",
+    "code": "TCH004",
+    "max_load_per_day": 4,
+    "subjects": "BIO201,BIO202,BIO203"
+  },
+  {
+    "name": "Dr. Amit Verma",
+    "short_abbr": "DAV",
+    "code": "TCH005",
+    "max_load_per_day": 5,
+    "subjects": "CHE101,CHE102"
+  },
+  {
+    "name": "Prof. Sunita Reddy",
+    "short_abbr": "PSR",
+    "code": "TCH006",
+    "max_load_per_day": 6,
+    "subjects": "ENG101,ENG102"
+  },
+  {
+    "name": "Dr. Ramesh Gupta",
+    "short_abbr": "DRG",
+    "code": "TCH007",
+    "max_load_per_day": 5,
+    "subjects": "CS201,CS301"
+  },
+  {
+    "name": "Prof. Kavita Desai",
+    "short_abbr": "PKD",
+    "code": "TCH008",
+    "max_load_per_day": 4,
+    "subjects": "MATH101,MATH301"
+  },
+  {
+    "name": "Dr. Suresh Nair",
+    "short_abbr": "DSN",
+    "code": "TCH009",
+    "max_load_per_day": 6,
+    "subjects": "PHY201,PHY301"
+  },
+  {
+    "name": "Prof. Meera Iyer",
+    "short_abbr": "PMI",
+    "code": "TCH010",
+    "max_load_per_day": 5,
+    "subjects": "BIO101,BIO301"
+  }
+]
