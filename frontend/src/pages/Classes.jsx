@@ -15,7 +15,7 @@ import * as labApi from '../services/labApi';
 const schema = z.object({
   class_name: z.string().min(1, 'Class name required'),
   year: z.coerce.number().int().min(1, 'Year required'),
-  section: z.enum(['F', 'S', 'T', 'L'], { required_error: 'Section required' }),
+  section: z.enum(['1', '2', '3', '4'], { required_error: 'Section required' }),
   student_count: z.coerce.number().int().min(0).optional().default(0),
   subjects: z.array(z.string()).optional().default([]),
   labs: z.array(z.string()).optional().default([]),
@@ -92,6 +92,8 @@ export default function Classes() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [subjectList, setSubjectList] = useState([]);
   const [labList, setLabList] = useState([]);
+  const [subjectSearch, setSubjectSearch] = useState('');
+  const [labSearch, setLabSearch] = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -140,7 +142,7 @@ export default function Classes() {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { class_name: '', year: 1, section: 'F', student_count: 0, subjects: [], labs: [] },
+    defaultValues: { class_name: '', year: 1, section: '1', student_count: 0, subjects: [], labs: [] },
   });
 
   const selectedSubjectIds = watch('subjects') || [];
@@ -162,7 +164,9 @@ export default function Classes() {
 
   const openCreate = () => {
     setEditing(null);
-    reset({ class_name: '', year: 1, section: 'F', student_count: 0, subjects: [], labs: [] });
+    reset({ class_name: '', year: 1, section: '1', student_count: 0, subjects: [], labs: [] });
+    setSubjectSearch('');
+    setLabSearch('');
     setModalOpen(true);
   };
 
@@ -178,6 +182,8 @@ export default function Classes() {
       subjects: subjectIds,
       labs: labIds,
     });
+    setSubjectSearch('');
+    setLabSearch('');
     setModalOpen(true);
   };
 
@@ -274,7 +280,12 @@ export default function Classes() {
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-              <input {...register('year')} type="number" min={1} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" />
+              <select {...register('year')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
+                <option value="1">1st</option>
+                <option value="2">2nd</option>
+                <option value="3">3rd</option>
+                <option value="4">4th</option>
+              </select>
               {errors.year && <p className="text-red-500 text-sm mt-1">{errors.year.message}</p>}
             </div>
           </div>
@@ -282,10 +293,10 @@ export default function Classes() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
               <select {...register('section')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
-                <option value="F">F</option>
-                <option value="S">S</option>
-                <option value="T">T</option>
-                <option value="L">L</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
               </select>
               {errors.section && <p className="text-red-500 text-sm mt-1">{errors.section.message}</p>}
             </div>
@@ -298,45 +309,95 @@ export default function Classes() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Subjects</label>
+              {subjectList.length > 0 && (
+                <input
+                  type="text"
+                  placeholder="Search subjects..."
+                  value={subjectSearch}
+                  onChange={(e) => setSubjectSearch(e.target.value)}
+                  className="w-full px-3 py-2 mb-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              )}
               <div className="border rounded p-2 max-h-40 overflow-y-auto bg-gray-50">
                 {subjectList.length === 0 ? (
                   <p className="text-sm text-gray-500 py-2">No subjects. Add subjects first from Subjects page.</p>
                 ) : (
-                  <div className="space-y-1.5">
-                    {subjectList.map((s) => (
-                      <label key={s._id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded px-2 py-1">
-                        <input
-                          type="checkbox"
-                          checked={selectedSubjectIds.includes(s._id)}
-                          onChange={() => toggleSubject(s._id)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm">{s.short_name || s.code} {s.code && s.short_name !== s.code && `(${s.code})`}</span>
-                      </label>
-                    ))}
-                  </div>
+                  (() => {
+                    const filteredSubjects = subjectList.filter((s) => {
+                      if (!subjectSearch.trim()) return true;
+                      const searchLower = subjectSearch.toLowerCase();
+                      return (
+                        s.full_name?.toLowerCase().includes(searchLower) ||
+                        s.short_name?.toLowerCase().includes(searchLower) ||
+                        s.code?.toLowerCase().includes(searchLower)
+                      );
+                    });
+                    if (filteredSubjects.length === 0) {
+                      return <p className="text-sm text-gray-500 py-2">No subjects found matching "{subjectSearch}"</p>;
+                    }
+                    return (
+                      <div className="space-y-1.5">
+                        {filteredSubjects.map((s) => (
+                          <label key={s._id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded px-2 py-1">
+                            <input
+                              type="checkbox"
+                              checked={selectedSubjectIds.includes(s._id)}
+                              onChange={() => toggleSubject(s._id)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm">{s.short_name || s.code} {s.code && s.short_name !== s.code && `(${s.code})`}</span>
+                          </label>
+                        ))}
+                      </div>
+                    );
+                  })()
                 )}
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Labs</label>
+              {labList.length > 0 && (
+                <input
+                  type="text"
+                  placeholder="Search labs..."
+                  value={labSearch}
+                  onChange={(e) => setLabSearch(e.target.value)}
+                  className="w-full px-3 py-2 mb-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              )}
               <div className="border rounded p-2 max-h-40 overflow-y-auto bg-gray-50">
                 {labList.length === 0 ? (
                   <p className="text-sm text-gray-500 py-2">No labs. Add labs first from Labs page.</p>
                 ) : (
-                  <div className="space-y-1.5">
-                    {labList.map((l) => (
-                      <label key={l._id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded px-2 py-1">
-                        <input
-                          type="checkbox"
-                          checked={selectedLabIds.includes(l._id)}
-                          onChange={() => toggleLab(l._id)}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        />
-                        <span className="text-sm">{l.short_name || l.name} {l.code && `(${l.code})`}</span>
-                      </label>
-                    ))}
-                  </div>
+                  (() => {
+                    const filteredLabs = labList.filter((l) => {
+                      if (!labSearch.trim()) return true;
+                      const searchLower = labSearch.toLowerCase();
+                      return (
+                        l.name?.toLowerCase().includes(searchLower) ||
+                        l.short_name?.toLowerCase().includes(searchLower) ||
+                        l.code?.toLowerCase().includes(searchLower)
+                      );
+                    });
+                    if (filteredLabs.length === 0) {
+                      return <p className="text-sm text-gray-500 py-2">No labs found matching "{labSearch}"</p>;
+                    }
+                    return (
+                      <div className="space-y-1.5">
+                        {filteredLabs.map((l) => (
+                          <label key={l._id} className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded px-2 py-1">
+                            <input
+                              type="checkbox"
+                              checked={selectedLabIds.includes(l._id)}
+                              onChange={() => toggleLab(l._id)}
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm">{l.short_name || l.name} {l.code && `(${l.code})`}</span>
+                          </label>
+                        ))}
+                      </div>
+                    );
+                  })()
                 )}
               </div>
             </div>

@@ -64,10 +64,10 @@ async function seed() {
     ]);
     console.log('Created teachers:', teachers.length);
 
-    // Classes (code auto-generated: class_name-year+section; insertMany bypasses pre-save, so set manually)
+    // Classes (code format: class_name + year_code + section; year_code: 1='', 2='S', 3='T', 4='F')
     const classes = await Class.insertMany([
-      { class_name: 'CSEAIML', year: 3, section: 'T', code: 'CSEAIML-3T', student_count: 60 },
-      { class_name: 'CSEAIML', year: 3, section: 'F', code: 'CSEAIML-3F', student_count: 60 },
+      { class_name: 'CSEAIML', year: 3, section: '3', code: 'CSEAIMLT3', student_count: 60 },
+      { class_name: 'CSEAIML', year: 3, section: '4', code: 'CSEAIMLT4', student_count: 60 },
     ]);
     console.log('Created classes:', classes.length);
 

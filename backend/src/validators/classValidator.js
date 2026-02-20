@@ -1,13 +1,13 @@
 import { body, param } from 'express-validator';
 
-const SECTION_ENUM = ['F', 'S', 'T', 'L'];
+const SECTION_ENUM = ['1', '2', '3', '4'];
 
 export const createClass = [
   body('class_name').trim().notEmpty().withMessage('Class name is required'),
   body('year').isInt({ min: 1 }).withMessage('Year must be a positive integer'),
   body('section')
     .isIn(SECTION_ENUM)
-    .withMessage('Section must be F, S, T, or L'),
+    .withMessage('Section must be 1, 2, 3, or 4'),
   body('student_count').optional().isInt({ min: 0 }).withMessage('Student count must be non-negative'),
   body('subjects').optional().isArray().withMessage('Subjects must be an array'),
   body('subjects.*').optional().isMongoId().withMessage('Invalid subject ID'),

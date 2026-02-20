@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const SECTION_ENUM = ['F', 'S', 'T', 'L'];
+const SECTION_ENUM = ['1', '2', '3', '4'];
 
 const classSchema = new mongoose.Schema(
   {
@@ -19,7 +19,11 @@ classSchema.pre('save', function (next) {
   if (!this.isModified('class_name') && !this.isModified('year') && !this.isModified('section')) {
     return next();
   }
-  this.code = `${this.class_name}-${this.year}${this.section}`;
+  // Year mapping: 1='', 2='S', 3='T', 4='F'
+  const yearCodeMap = { 1: '', 2: 'S', 3: 'T', 4: 'F' };
+  const yearCode = yearCodeMap[this.year] || '';
+  // Format: class_name + year_code + section (section is 1,2,3,4)
+  this.code = `${this.class_name}${yearCode}${this.section}`;
   next();
 });
 
