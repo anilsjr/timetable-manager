@@ -275,12 +275,12 @@ export default function Classes() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Class Name</label>
-              <input {...register('class_name')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" placeholder="e.g. CSEAIML" />
+              <input {...register('class_name')} disabled={!!editing} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" placeholder="e.g. CSEAIML" />
               {errors.class_name && <p className="text-red-500 text-sm mt-1">{errors.class_name.message}</p>}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Year</label>
-              <select {...register('year')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
+              <select {...register('year')} disabled={!!editing} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
                 <option value="1">1st</option>
                 <option value="2">2nd</option>
                 <option value="3">3rd</option>
@@ -292,7 +292,7 @@ export default function Classes() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Section</label>
-              <select {...register('section')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
+              <select {...register('section')} disabled={!!editing} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed">
                 <option value="1">1</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
@@ -310,13 +310,26 @@ export default function Classes() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Subjects</label>
               {subjectList.length > 0 && (
-                <input
-                  type="text"
-                  placeholder="Search subjects..."
-                  value={subjectSearch}
-                  onChange={(e) => setSubjectSearch(e.target.value)}
-                  className="w-full px-3 py-2 mb-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
-                />
+                <div className="relative mb-2">
+                  <input
+                    type="text"
+                    placeholder="Search subjects..."
+                    value={subjectSearch}
+                    onChange={(e) => setSubjectSearch(e.target.value)}
+                    className="w-full px-3 py-2 pr-8 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                  {subjectSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setSubjectSearch('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               )}
               <div className="border rounded p-2 max-h-40 overflow-y-auto bg-gray-50">
                 {subjectList.length === 0 ? (
@@ -357,13 +370,26 @@ export default function Classes() {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Labs</label>
               {labList.length > 0 && (
-                <input
-                  type="text"
-                  placeholder="Search labs..."
-                  value={labSearch}
-                  onChange={(e) => setLabSearch(e.target.value)}
-                  className="w-full px-3 py-2 mb-2 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
-                />
+                <div className="relative mb-2">
+                  <input
+                    type="text"
+                    placeholder="Search labs..."
+                    value={labSearch}
+                    onChange={(e) => setLabSearch(e.target.value)}
+                    className="w-full px-3 py-2 pr-8 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                  />
+                  {labSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setLabSearch('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               )}
               <div className="border rounded p-2 max-h-40 overflow-y-auto bg-gray-50">
                 {labList.length === 0 ? (
