@@ -7,6 +7,7 @@ import * as scheduleApi from '../services/scheduleApi';
 import * as classApi from '../services/classApi';
 import * as facultyAssignmentsApi from '../services/facultyAssignmentsApi';
 import { formatTime } from '../utils/dateHelpers';
+import { isValidLabStartTime } from '../utils/labSlotHelpers';
 
 export default function Schedules() {
   const [selectedClassId, setSelectedClassId] = useState('');
@@ -18,6 +19,7 @@ export default function Schedules() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalInitial, setModalInitial] = useState(null);
   const [editing, setEditing] = useState(null);
+  const [slotLabWarning, setSlotLabWarning] = useState(null);
 
   const fetchClasses = useCallback(async () => {
     try {
@@ -77,6 +79,11 @@ export default function Schedules() {
 
   const openAdd = (day, slot) => {
     setEditing(null);
+    
+    // Check if this slot can accommodate a lab
+    const labValidation = isValidLabStartTime(slot.start);
+    setSlotLabWarning(labValidation.valid ? null : labValidation.message);
+    
     setModalInitial({
       classId: selectedClassId,
       subjectId: '',
@@ -90,6 +97,7 @@ export default function Schedules() {
   };
 
   const openEdit = (sched) => {
+    setSlotLabWarning(null); // Clear warning when editing
     const classId = typeof sched.class === 'object' ? sched.class._id : sched.class;
     const subjectId = typeof sched.subject === 'object' ? sched.subject._id : sched.subject;
     const teacherId = typeof sched.teacher === 'object' ? sched.teacher._id : sched.teacher;
@@ -159,11 +167,15 @@ export default function Schedules() {
 
       <AddScheduleModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setSlotLabWarning(null);
+        }}
         initialValues={modalInitial}
         editing={editing}
         classes={classes}
         onSuccess={refreshClassData}
+        slotLabWarning={slotLabWarning}
       />
     </div>
   );

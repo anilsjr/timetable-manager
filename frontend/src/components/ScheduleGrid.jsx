@@ -76,19 +76,43 @@ function renderCellContent(schedule) {
 export default function ScheduleGrid({ schedules = [], onCellClick }) {
   const cellMap = useMemo(() => {
     const map = new Map();
+    const spannedCells = new Set(); // Track cells that are part of a 2-slot lab
+    
     for (const day of DAYS) {
-      for (const slot of TIMESLOTS) {
+      for (let slotIdx = 0; slotIdx < TIMESLOTS.length; slotIdx++) {
+        const slot = TIMESLOTS[slotIdx];
         if (slot.type !== 'slot') continue;
+        
         const key = `${day}_${slot.start}_${slot.end}`;
         const sched = schedules.find((s) => {
           const start = formatTime(s.start_time);
           const end = formatTime(s.end_time);
           return s.day_of_week === day && overlaps(slot.start, slot.end, start, end);
         });
-        map.set(key, sched || null);
+        
+        if (sched) {
+          map.set(key, sched);
+          
+          // If it's a LAB (duration_slots === 2), mark the next slot as spanned
+          if (sched.type === 'LAB' || sched.duration_slots === 2) {
+            const nextSlotIdx = slotIdx + 1;
+            // Skip breaks/lunches to find the actual next slot
+            let actualNextIdx = nextSlotIdx;
+            while (actualNextIdx < TIMESLOTS.length && TIMESLOTS[actualNextIdx].type !== 'slot') {
+              actualNextIdx++;
+            }
+            if (actualNextIdx < TIMESLOTS.length) {
+              const nextSlot = TIMESLOTS[actualNextIdx];
+              const nextKey = `${day}_${nextSlot.start}_${nextSlot.end}`;
+              spannedCells.add(nextKey);
+            }
+          }
+        } else {
+          map.set(key, null);
+        }
       }
     }
-    return map;
+    return { map, spannedCells };
   }, [schedules]);
 
   return (
@@ -118,6 +142,12 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
                 </td>
                 {TIMESLOTS.map((slot) => {
                   const key = `${day}_${slot.start}_${slot.end}`;
+                  
+                  // Skip this cell if it's part of a spanned lab
+                  if (cellMap.spannedCells.has(key)) {
+                    return null;
+                  }
+                  
                   if (slot.type === 'break') {
                     return (
                       <td
@@ -148,14 +178,17 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
                       </td>
                     );
                   }
-                  const sched = cellMap.get(key);
+                  
+                  const sched = cellMap.map.get(key);
                   const isFilled = !!sched;
+                  const isLab = sched?.type === 'LAB' || sched?.duration_slots === 2;
                   const { content, cellClass } = renderCellContent(sched);
                   const fillClass = isFilled ? cellClass : 'bg-white hover:bg-gray-50';
 
                   return (
                     <td
                       key={key}
+                      colSpan={isLab ? 2 : 1}
                       className={`border border-gray-200 align-top ${fillClass}`}
                     >
                       <button

@@ -14,6 +14,7 @@ const scheduleSchema = new mongoose.Schema(
     day_of_week: { type: String, enum: DAY_ENUM, required: true },
     start_time: { type: Date, required: true },
     end_time: { type: Date, required: true },
+    duration_slots: { type: Number, default: 1 }, // 1 for LECTURE, 2 for LAB
   },
   { timestamps: true }
 );

@@ -41,6 +41,7 @@ export default function AddScheduleModal({
   editing = null,
   classes = [],
   onSuccess,
+  slotLabWarning = null,
 }) {
   const [classSubjects, setClassSubjects] = useState([]);
   const [classLabs, setClassLabs] = useState([]);
@@ -84,6 +85,18 @@ export default function AddScheduleModal({
     ? classes.filter((c) => c._id === currentClassId)
     : classes;
   const classOptions = displayClasses.length ? displayClasses : classes;
+
+  // Auto-calculate end time for labs (2 continuous slots = 100 minutes)
+  useEffect(() => {
+    if (type === 'LAB' && startTime) {
+      const [hours, minutes] = startTime.split(':').map(Number);
+      const totalMinutes = hours * 60 + minutes + 100;
+      const endHours = Math.floor(totalMinutes / 60);
+      const endMinutes = totalMinutes % 60;
+      const endTimeStr = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+      setValue('endTime', endTimeStr);
+    }
+  }, [type, startTime, setValue]);
 
   useEffect(() => {
     if (!open) return;
@@ -285,11 +298,32 @@ export default function AddScheduleModal({
               <input type="radio" {...register('type')} value="LECTURE" className="rounded" />
               <span>Subject</span>
             </label>
-            <label className="inline-flex items-center gap-2 cursor-pointer">
-              <input type="radio" {...register('type')} value="LAB" className="rounded" />
+            <label className={`inline-flex items-center gap-2 ${slotLabWarning && !editing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
+              <input 
+                type="radio" 
+                {...register('type')} 
+                value="LAB" 
+                className="rounded" 
+                disabled={slotLabWarning && !editing}
+              />
               <span>Lab</span>
             </label>
           </div>
+          {type === 'LAB' && !slotLabWarning && (
+            <p className="mt-2 text-sm text-blue-600 bg-blue-50 p-2 rounded">
+              ℹ️ Lab sessions occupy 2 continuous slots (100 minutes). End time is auto-calculated.
+            </p>
+          )}
+          {slotLabWarning && type === 'LAB' && !editing && (
+            <p className="mt-2 text-sm text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
+              ⚠️ {slotLabWarning}
+            </p>
+          )}
+          {slotLabWarning && type !== 'LAB' && !editing && (
+            <p className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
+              ⚠️ This slot cannot accommodate a lab session. {slotLabWarning}
+            </p>
+          )}
         </div>
 
         {isLabType && (

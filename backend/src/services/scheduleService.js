@@ -25,22 +25,32 @@ function normalizePayload(body) {
   const day = body.day || body.day_of_week;
   const startTime = body.startTime || body.start_time;
   const endTime = body.endTime || body.end_time;
+  const type = body.type;
 
   const start_time =
     typeof startTime === 'string' && startTime.length <= 5
       ? toDate(day, startTime)
       : new Date(startTime);
-  const end_time =
-    typeof endTime === 'string' && endTime.length <= 5 ? toDate(day, endTime) : new Date(endTime);
+  
+  let end_time;
+  if (type === 'LAB') {
+    // For labs, calculate end_time as start_time + 100 minutes (2 slots of 50 minutes each)
+    end_time = new Date(start_time);
+    end_time.setMinutes(end_time.getMinutes() + 100);
+  } else {
+    end_time =
+      typeof endTime === 'string' && endTime.length <= 5 ? toDate(day, endTime) : new Date(endTime);
+  }
 
   const normalized = {
     class: classId,
     subject: subjectId ?? null,
     teacher: teacherId ?? null,
-    type: body.type,
+    type: type,
     day_of_week: day,
     start_time,
     end_time,
+    duration_slots: type === 'LAB' ? 2 : 1,
   };
   if (body.room !== undefined) normalized.room = body.room ?? null;
   if (body.roomModel !== undefined) normalized.roomModel = body.roomModel ?? null;
