@@ -30,5 +30,6 @@ router.use(protect, adminOnly);
 router.post('/subjects', upload.single('file'), importController.importSubjects);
 router.post('/teachers', upload.single('file'), importController.importTeachers);
 router.post('/labs', upload.single('file'), importController.importLabs);
+router.post('/classes', upload.single('file'), importController.importClasses);
 
 export default router;

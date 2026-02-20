@@ -93,3 +93,34 @@ export const importLabs = async (req, res, next) => {
     next(err);
   }
 };
+
+/**
+ * POST /api/import/classes
+ * Body: multipart file (field: file) – CSV, Excel, or JSON
+ */
+export const importClasses = async (req, res, next) => {
+  try {
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ success: false, error: 'No file uploaded. Use field name: file' });
+    }
+    const { rows } = importService.parseFile(
+      req.file.buffer,
+      req.file.mimetype,
+      req.file.originalname
+    );
+    if (!rows.length) {
+      return res.status(400).json({ success: false, error: 'File contains no data rows' });
+    }
+    const { created, errors } = await importService.importClasses(rows);
+    res.status(201).json({
+      success: true,
+      created: created.length,
+      errors: errors.length,
+      total: rows.length,
+      details: errors.length ? { errors } : undefined,
+    });
+  } catch (err) {
+    logger.warn('Import classes failed', { message: err.message });
+    next(err);
+  }
+};

@@ -6,6 +6,7 @@ import * as XLSX from 'xlsx';
 import Subject from '../models/Subject.js';
 import Teacher from '../models/Teacher.js';
 import Lab from '../models/Lab.js';
+import Class from '../models/Class.js';
 import logger from '../utils/logger.js';
 
 const EXCEL_MIMES = [
@@ -131,6 +132,26 @@ function toTeacherDoc(row) {
     throw new Error(`Teacher row missing required field: name, short_abbr. Got: ${JSON.stringify(row)}`);
   }
   return { name: String(name).trim(), short_abbr: String(short_abbr).trim(), code, max_load_per_day, subjectCodes: row.subjects };
+}
+
+/**
+ * Class row: class_name, year, section, student_count (optional), subjects (optional comma-separated codes), labs (optional comma-separated codes).
+ */
+function toClassDoc(row) {
+  const class_name = row.class_name ?? row.name;
+  const year = num(row.year, null);
+  const section = row.section != null ? String(row.section).trim() : null;
+  const student_count = row.student_count != null ? num(row.student_count, 0) : 0;
+  if (!class_name || year === null || !section) {
+    throw new Error(`Class row missing required field: class_name, year, section. Got: ${JSON.stringify(row)}`);
+  }
+  if (![1, 2, 3, 4].includes(year)) {
+    throw new Error(`Class year must be 1, 2, 3, or 4. Got: ${year}`);
+  }
+  if (!['1', '2', '3', '4'].includes(section)) {
+    throw new Error(`Class section must be '1', '2', '3', or '4'. Got: ${section}`);
+  }
+  return { class_name: String(class_name).trim(), year, section, student_count, subjectCodes: row.subjects, labCodes: row.labs };
 }
 
 function num(val, defaultVal) {
@@ -267,5 +288,95 @@ export async function importTeachers(rows) {
     }
   }
   logger.info('Import teachers', { total: rows.length, created: created.length, errors: errors.length });
+  return { created, errors };
+}
+
+/**
+ * Import classes. Resolves subject and lab codes to IDs.
+ * subjects column can be comma-separated subject codes.
+ * labs column can be comma-separated lab codes.
+ * Returns { created, errors }.
+ * Handles: duplicate class (class_name + year + section) in DB or file, and resolves references.
+ */
+export async function importClasses(rows) {
+  const created = [];
+  const errors = [];
+  const classKeysInFile = new Set();
+  
+  // Build lookup maps for subjects and labs
+  const subjectByCode = new Map();
+  const subjects = await Subject.find({}).lean();
+  subjects.forEach((s) => subjectByCode.set(String(s.code).trim().toLowerCase(), s._id));
+  
+  const labByCode = new Map();
+  const labs = await Lab.find({}).lean();
+  labs.forEach((l) => labByCode.set(String(l.code).trim().toLowerCase(), l._id));
+
+  for (let i = 0; i < rows.length; i++) {
+    try {
+      const doc = toClassDoc(rows[i]);
+      const subjectCodes = doc.subjectCodes;
+      const labCodes = doc.labCodes;
+      delete doc.subjectCodes;
+      delete doc.labCodes;
+      
+      // Resolve subject codes to IDs
+      let subjectIds = [];
+      if (subjectCodes != null && subjectCodes !== '') {
+        const codes = String(subjectCodes)
+          .split(/[,;|]/)
+          .map((c) => c.trim())
+          .filter(Boolean);
+        subjectIds = codes
+          .map((c) => subjectByCode.get(c.toLowerCase()))
+          .filter(Boolean);
+        const missing = codes.filter((c) => !subjectByCode.has(c.toLowerCase()));
+        if (missing.length) {
+          logger.debug('Class import: unknown subject codes', { missing, row: i + 1 });
+        }
+      }
+      doc.subjects = subjectIds;
+      
+      // Resolve lab codes to IDs
+      let labIds = [];
+      if (labCodes != null && labCodes !== '') {
+        const codes = String(labCodes)
+          .split(/[,;|]/)
+          .map((c) => c.trim())
+          .filter(Boolean);
+        labIds = codes
+          .map((c) => labByCode.get(c.toLowerCase()))
+          .filter(Boolean);
+        const missing = codes.filter((c) => !labByCode.has(c.toLowerCase()));
+        if (missing.length) {
+          logger.debug('Class import: unknown lab codes', { missing, row: i + 1 });
+        }
+      }
+      doc.labs = labIds;
+
+      // Check for duplicates by class_name + year + section
+      const classKey = `${doc.class_name}-${doc.year}-${doc.section}`;
+      if (classKeysInFile.has(classKey)) {
+        errors.push({ row: i + 1, message: `Duplicate class in file: ${doc.class_name} Year ${doc.year} Section ${doc.section}` });
+        continue;
+      }
+      
+      const existing = await Class.findOne({ class_name: doc.class_name, year: doc.year, section: doc.section });
+      if (existing) {
+        errors.push({ row: i + 1, message: `Class already exists in database: ${doc.class_name} Year ${doc.year} Section ${doc.section}` });
+        continue;
+      }
+      
+      const classObj = await Class.create(doc);
+      created.push(classObj);
+      classKeysInFile.add(classKey);
+    } catch (e) {
+      const msg = isDuplicateKeyError(e) 
+        ? `Duplicate class (in file or already in database): ${rows[i]?.class_name || '?'}` 
+        : (e.message || String(e));
+      errors.push({ row: i + 1, message: msg });
+    }
+  }
+  logger.info('Import classes', { total: rows.length, created: created.length, errors: errors.length });
   return { created, errors };
 }

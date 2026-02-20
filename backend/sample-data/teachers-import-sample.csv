@@ -1,0 +1,11 @@
+name,short_abbr,code,max_load_per_day,subjects
+"Dr. Rajesh Kumar",DRK,TCH001,6,"CS101,CS102,CS103"
+"Prof. Anjali Sharma",PAS,TCH002,5,"MATH201,MATH202"
+"Dr. Vikram Singh",DVS,TCH003,6,"PHY101,PHY102"
+"Prof. Priya Patel",PPP,TCH004,4,"BIO201,BIO202,BIO203"
+"Dr. Amit Verma",DAV,TCH005,5,"CHE101,CHE102"
+"Prof. Sunita Reddy",PSR,TCH006,6,"ENG101,ENG102"
+"Dr. Ramesh Gupta",DRG,TCH007,5,"CS201,CS301"
+"Prof. Kavita Desai",PKD,TCH008,4,"MATH101,MATH301"
+"Dr. Suresh Nair",DSN,TCH009,6,"PHY201,PHY301"
+"Prof. Meera Iyer",PMI,TCH010,5,"BIO101,BIO301"

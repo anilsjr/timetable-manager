@@ -1,0 +1,11 @@
+name,short_name,code,room_number,capacity
+"Computer Science Lab 1",CS Lab 1,LAB-CS1,101,60
+"Computer Science Lab 2",CS Lab 2,LAB-CS2,102,60
+"Physics Lab",Physics Lab,LAB-PHY,201,40
+"Chemistry Lab",Chem Lab,LAB-CHE,202,40
+"Biology Lab",Bio Lab,LAB-BIO,203,35
+"Electronics Lab",Elect Lab,LAB-ELE,301,50
+"Networking Lab",Network Lab,LAB-NET,302,45
+"Data Science Lab",DS Lab,LAB-DS,103,55
+"AI/ML Lab",AI Lab,LAB-AI,104,50
+"Robotics Lab",Robot Lab,LAB-ROB,303,30

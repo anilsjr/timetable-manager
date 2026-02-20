@@ -1,0 +1,22 @@
+full_name,short_name,code
+"Introduction to Computer Science",Intro CS,CS101
+"Data Structures and Algorithms",DSA,CS102
+"Database Management Systems",DBMS,CS103
+"Advanced Computer Science",Adv CS,CS201
+"Operating Systems",OS,CS301
+"Calculus I",Calc 1,MATH101
+"Linear Algebra",Lin Alg,MATH201
+"Discrete Mathematics",Discrete Math,MATH301
+"Physics I",Physics 1,PHY101
+"Electromagnetism",EM,PHY201
+"Quantum Physics",Quantum,PHY301
+"Chemistry I",Chem 1,CHE101
+"Organic Chemistry",Organic,CHE102
+"Physical Chemistry",Phys Chem,CHE201
+"Biology I",Bio 1,BIO101
+"Microbiology",Micro Bio,BIO201
+"Genetics",Genetics,BIO301
+"English Communication",Eng Com,ENG101
+"Technical Writing",Tech Write,ENG102
+"Electronics I",Elect 1,ELE201
+"Digital Electronics",Digital,ELE301
