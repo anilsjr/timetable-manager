@@ -46,11 +46,16 @@ function renderCellContent(schedule) {
 
     return {
       content: (
-        <span className="block font-semibold text-purple-900 text-sm leading-tight">
-          {singleLine}
-        </span>
+        <div className="pointer-events-none">
+          <span className="block font-semibold text-purple-900 text-sm leading-tight">
+            {singleLine}
+          </span>
+          <span className="block text-xs text-purple-700 mt-0.5">
+            Click to edit • 2 slots
+          </span>
+        </div>
       ),
-      cellClass: 'bg-purple-100',
+      cellClass: 'bg-purple-100 hover:bg-purple-200',
     };
   }
 
@@ -64,12 +69,12 @@ function renderCellContent(schedule) {
 
   return {
     content: (
-      <span className="block text-blue-900">
+      <span className="block text-blue-900 pointer-events-none">
         <span className="font-semibold block">{subjectShortName} (L)</span>
         <span className="text-xs text-blue-800/90">{teacherShortName}</span>
       </span>
     ),
-    cellClass: 'bg-blue-100',
+    cellClass: 'bg-blue-100 hover:bg-blue-200',
   };
 }
 
@@ -77,6 +82,7 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
   const cellMap = useMemo(() => {
     const map = new Map();
     const spannedCells = new Set(); // Track cells that are part of a 2-slot lab
+    const labCells = new Map(); // Track lab schedule for spanned cells too
     
     for (const day of DAYS) {
       for (let slotIdx = 0; slotIdx < TIMESLOTS.length; slotIdx++) {
@@ -84,6 +90,12 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
         if (slot.type !== 'slot') continue;
         
         const key = `${day}_${slot.start}_${slot.end}`;
+        
+        // Skip if already marked as spanned
+        if (spannedCells.has(key)) {
+          continue;
+        }
+        
         const sched = schedules.find((s) => {
           const start = formatTime(s.start_time);
           const end = formatTime(s.end_time);
@@ -95,9 +107,8 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
           
           // If it's a LAB (duration_slots === 2), mark the next slot as spanned
           if (sched.type === 'LAB' || sched.duration_slots === 2) {
-            const nextSlotIdx = slotIdx + 1;
-            // Skip breaks/lunches to find the actual next slot
-            let actualNextIdx = nextSlotIdx;
+            // Find the next actual slot (skip breaks/lunches)
+            let actualNextIdx = slotIdx + 1;
             while (actualNextIdx < TIMESLOTS.length && TIMESLOTS[actualNextIdx].type !== 'slot') {
               actualNextIdx++;
             }
@@ -105,6 +116,7 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
               const nextSlot = TIMESLOTS[actualNextIdx];
               const nextKey = `${day}_${nextSlot.start}_${nextSlot.end}`;
               spannedCells.add(nextKey);
+              labCells.set(nextKey, sched); // Also store lab reference for the spanned cell
             }
           }
         } else {
@@ -112,7 +124,7 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
         }
       }
     }
-    return { map, spannedCells };
+    return { map, spannedCells, labCells };
   }, [schedules]);
 
   return (
@@ -143,7 +155,7 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
                 {TIMESLOTS.map((slot) => {
                   const key = `${day}_${slot.start}_${slot.end}`;
                   
-                  // Skip this cell if it's part of a spanned lab
+                  // Skip this cell if it's part of a spanned lab (it's rendered as part of previous cell)
                   if (cellMap.spannedCells.has(key)) {
                     return null;
                   }
@@ -189,17 +201,42 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
                     <td
                       key={key}
                       colSpan={isLab ? 2 : 1}
-                      className={`border border-gray-200 align-top ${fillClass}`}
+                      className={`border border-gray-200 align-top ${fillClass} p-0`}
                     >
                       <button
                         type="button"
-                        onClick={() => onCellClick(day, slot, sched)}
-                        className="w-full min-h-[52px] p-2 text-left rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          console.log('Cell clicked:', { 
+                            day, 
+                            slotStart: slot.start, 
+                            hasSchedule: !!sched, 
+                            schedType: sched?.type, 
+                            schedId: sched?._id,
+                            isLab,
+                            colSpan: isLab ? 2 : 1
+                          });
+                          if (onCellClick) {
+                            onCellClick(day, slot, sched);
+                          }
+                        }}
+                        className={`w-full h-full min-h-[52px] px-2 py-2 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-inset ${
+                          isLab ? 'focus:ring-purple-500' : 'focus:ring-blue-500'
+                        } ${isFilled ? 'cursor-pointer hover:opacity-90' : 'rounded-lg cursor-pointer'}`}
+                        style={{ 
+                          display: 'block', 
+                          width: '100%', 
+                          minHeight: '52px',
+                          background: 'transparent',
+                          border: 'none',
+                          pointerEvents: 'auto'
+                        }}
                       >
                         {isFilled ? (
                           content
                         ) : (
-                          <span className="text-gray-400 text-2xl font-light leading-none">+</span>
+                          <span className="text-gray-400 text-2xl font-light leading-none pointer-events-none">+</span>
                         )}
                       </button>
                     </td>

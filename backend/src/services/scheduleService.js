@@ -96,7 +96,7 @@ export const getSchedulesByClass = async (classId) => {
     .populate('class', 'class_name year section code')
     .populate('subject', 'full_name short_name code')
     .populate('teacher', 'name short_abbr')
-    .populate('room', 'name short_name code')
+    .populate('room', 'name short_name code room_number')
     .sort({ day_of_week: 1, start_time: 1 })
     .lean();
   return data;

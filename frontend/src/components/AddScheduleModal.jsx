@@ -279,6 +279,11 @@ export default function AddScheduleModal({
               disabled
               className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-100"
             />
+            {startTime && (
+              <p className="text-xs text-gray-500 mt-1">
+                Selected: {startTime}
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
@@ -288,41 +293,52 @@ export default function AddScheduleModal({
               disabled
               className="w-full px-3 py-2 border border-gray-300 rounded bg-gray-100"
             />
+            {type === 'LAB' && (
+              <p className="text-xs text-blue-600 mt-1">
+                Auto-calculated (2 slots)
+              </p>
+            )}
           </div>
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Type</label>
-          <div className="flex gap-4">
-            <label className="inline-flex items-center gap-2 cursor-pointer">
-              <input type="radio" {...register('type')} value="LECTURE" className="rounded" />
-              <span>Subject</span>
-            </label>
-            <label className={`inline-flex items-center gap-2 ${slotLabWarning && !editing ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
-              <input 
-                type="radio" 
-                {...register('type')} 
-                value="LAB" 
-                className="rounded" 
-                disabled={slotLabWarning && !editing}
-              />
-              <span>Lab</span>
-            </label>
-          </div>
-          {type === 'LAB' && !slotLabWarning && (
-            <p className="mt-2 text-sm text-blue-600 bg-blue-50 p-2 rounded">
-              ℹ️ Lab sessions occupy 2 continuous slots (100 minutes). End time is auto-calculated.
-            </p>
-          )}
-          {slotLabWarning && type === 'LAB' && !editing && (
-            <p className="mt-2 text-sm text-amber-700 bg-amber-50 p-2 rounded border border-amber-200">
-              ⚠️ {slotLabWarning}
-            </p>
-          )}
-          {slotLabWarning && type !== 'LAB' && !editing && (
-            <p className="mt-2 text-sm text-gray-600 bg-gray-50 p-2 rounded">
-              ⚠️ This slot cannot accommodate a lab session. {slotLabWarning}
-            </p>
+          {editing ? (
+            <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded text-gray-700">
+              {type === 'LAB' ? 'Lab (2 slots)' : 'Subject'}
+            </div>
+          ) : (
+            <>
+              <div className="flex gap-4">
+                <label className="inline-flex items-center gap-2 cursor-pointer">
+                  <input type="radio" {...register('type')} value="LECTURE" className="rounded" />
+                  <span>Subject</span>
+                </label>
+                <label className={`inline-flex items-center gap-2 ${slotLabWarning ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
+                  <input 
+                    type="radio" 
+                    {...register('type')} 
+                    value="LAB" 
+                    className="rounded" 
+                    disabled={!!slotLabWarning}
+                    title={slotLabWarning || 'Lab session (2 continuous slots)'}
+                  />
+                  <span>Lab (2 slots)</span>
+                </label>
+              </div>
+              {type === 'LAB' && !slotLabWarning && (
+                <p className="mt-2 text-sm text-blue-600 bg-blue-50 p-2 rounded border border-blue-200">
+                  ℹ️ Lab sessions occupy 2 continuous slots (100 minutes total). End time is auto-calculated.
+                </p>
+              )}
+              {slotLabWarning && (
+                <div className="mt-2 text-sm text-amber-700 bg-amber-50 p-3 rounded border border-amber-300">
+                  <p className="font-medium mb-1">⚠️ Cannot schedule lab at this time</p>
+                  <p className="text-xs">{slotLabWarning}</p>
+                  <p className="text-xs mt-1">Valid lab times: 09:45, 11:30, 13:40, 14:30</p>
+                </div>
+              )}
+            </>
           )}
         </div>
 

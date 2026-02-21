@@ -97,13 +97,19 @@ export default function Schedules() {
   };
 
   const openEdit = (sched) => {
+    console.log('openEdit called with schedule:', sched);
     setSlotLabWarning(null); // Clear warning when editing
     const classId = typeof sched.class === 'object' ? sched.class._id : sched.class;
-    const subjectId = typeof sched.subject === 'object' ? sched.subject._id : sched.subject;
-    const teacherId = typeof sched.teacher === 'object' ? sched.teacher._id : sched.teacher;
+    const subjectId = sched.subject 
+      ? (typeof sched.subject === 'object' ? sched.subject._id : sched.subject)
+      : '';
+    const teacherId = sched.teacher
+      ? (typeof sched.teacher === 'object' ? sched.teacher._id : sched.teacher)
+      : '';
     const labId = sched.roomModel === 'Lab' && sched.room
       ? (typeof sched.room === 'object' ? sched.room._id : sched.room)
       : '';
+    console.log('Modal values:', { classId, subjectId, teacherId, labId, type: sched.type });
     setEditing(sched);
     setModalInitial({
       classId,
@@ -119,6 +125,7 @@ export default function Schedules() {
   };
 
   const handleCellClick = (day, slot, sched) => {
+    console.log('handleCellClick:', { day, slot: slot.start, hasSched: !!sched, slotType: slot.type });
     if (slot.type !== 'slot') return;
     if (sched) openEdit(sched);
     else openAdd(day, slot);
