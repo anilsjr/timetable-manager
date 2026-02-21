@@ -33,3 +33,6 @@ coverage/
 *.pid
 *.seed
 *.pid.lock
+
+
+/sample-data/
