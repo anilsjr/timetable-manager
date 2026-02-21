@@ -24,7 +24,7 @@ export default function Login() {
   } = useForm({
     resolver: zodResolver(schema),
     mode: 'onTouched',
-    defaultValues: { email: 'admin@ips.academy', password: 'admin123' },
+    defaultValues: { email: 'admin123', password: 'admin123' },
   });
 
   const onSubmit = async (data) => {
