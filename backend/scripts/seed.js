@@ -102,7 +102,7 @@ async function seed() {
     console.log('Created schedules:', schedules.length);
 
     console.log('Seed completed successfully!');
-    console.log('\nLogin: admin@ips.academy / admin123');
+    console.log('\nLogin: admin123 / admin123');
   } catch (err) {
     console.error('Seed failed:', err);
     process.exit(1);
