@@ -14,6 +14,7 @@ import scheduleRoutes from './routes/scheduleRoutes.js';
 import facultyAssignmentRoutes from './routes/facultyAssignmentRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import importRoutes from './routes/importRoutes.js';
+import exportRoutes from './routes/exportRoutes.js';
 
 connectDB();
 
@@ -32,6 +33,7 @@ app.use('/api/schedules', scheduleRoutes);
 app.use('/api/faculty-assignments', facultyAssignmentRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/import', importRoutes);
+app.use('/api/timetable/export', exportRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ success: true, message: 'IPS Timetable API' });

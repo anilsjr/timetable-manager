@@ -10,6 +10,7 @@ import Classes from './pages/Classes';
 import Labs from './pages/Labs';
 import Schedules from './pages/Schedules';
 import Import from './pages/Import';
+import ExportTimetables from './pages/ExportTimetables';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -49,6 +50,7 @@ export default function App() {
         <Route path="labs" element={<Labs />} />
         <Route path="schedules" element={<Schedules />} />
         <Route path="import" element={<Import />} />
+        <Route path="export" element={<ExportTimetables />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
