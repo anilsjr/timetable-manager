@@ -86,11 +86,12 @@ export default function AddScheduleModal({
     : classes;
   const classOptions = displayClasses.length ? displayClasses : classes;
 
-  // Auto-calculate end time for labs (2 continuous slots = 100 minutes)
+  // Auto-calculate end time based on type
   useEffect(() => {
-    if (type === 'LAB' && startTime) {
+    if (startTime && (type === 'LAB' || type === 'LECTURE')) {
       const [hours, minutes] = startTime.split(':').map(Number);
-      const totalMinutes = hours * 60 + minutes + 100;
+      const durationMinutes = type === 'LAB' ? 100 : 50; // 2 slots for lab, 1 slot for lecture
+      const totalMinutes = hours * 60 + minutes + durationMinutes;
       const endHours = Math.floor(totalMinutes / 60);
       const endMinutes = totalMinutes % 60;
       const endTimeStr = `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
@@ -296,6 +297,11 @@ export default function AddScheduleModal({
             {type === 'LAB' && (
               <p className="text-xs text-blue-600 mt-1">
                 Auto-calculated (2 slots)
+              </p>
+            )}
+            {type === 'LECTURE' && (
+              <p className="text-xs text-blue-600 mt-1">
+                Auto-calculated (1 slot)
               </p>
             )}
           </div>
