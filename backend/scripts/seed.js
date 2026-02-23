@@ -33,58 +33,58 @@ async function seed() {
 
     // Admin user (email matches Postman collection)
     const admin = await User.create({
-      email: 'admin@ips.academy',
+      email: 'admin123@gmail.com',
       password: 'admin123',
       role: 'admin',
     });
     console.log('Created admin user:', admin.email);
 
-    // Subjects (from IPS timetable)
-    const subjects = await Subject.insertMany([
-      { full_name: 'Natural Language Processing', short_name: 'NLP', code: 'PCC CL13' },
-      { full_name: 'Automata and Compiler Design', short_name: 'ACD', code: 'PCC CL15' },
-      { full_name: 'Introduction to Data Science', short_name: 'IDS', code: 'PCC CL14' },
-      { full_name: 'Software Engineering', short_name: 'SE', code: 'PEC CL02' },
-      { full_name: 'Scientific Aptitude', short_name: 'SA', code: 'IOC MA01' },
-      { full_name: 'Intellectual Property Rights', short_name: 'IPR', code: 'MLC MLC04' },
-      { full_name: 'Data Analytics using tools', short_name: 'DAT', code: 'LC CL14' },
-      { full_name: 'Japanese/French', short_name: 'LLC', code: 'HSMC HS05' },
-    ]);
-    console.log('Created subjects:', subjects.length);
+    // // Subjects (from IPS timetable)
+    // const subjects = await Subject.insertMany([
+    //   { full_name: 'Natural Language Processing', short_name: 'NLP', code: 'PCC CL13' },
+    //   { full_name: 'Automata and Compiler Design', short_name: 'ACD', code: 'PCC CL15' },
+    //   { full_name: 'Introduction to Data Science', short_name: 'IDS', code: 'PCC CL14' },
+    //   { full_name: 'Software Engineering', short_name: 'SE', code: 'PEC CL02' },
+    //   { full_name: 'Scientific Aptitude', short_name: 'SA', code: 'IOC MA01' },
+    //   { full_name: 'Intellectual Property Rights', short_name: 'IPR', code: 'MLC MLC04' },
+    //   { full_name: 'Data Analytics using tools', short_name: 'DAT', code: 'LC CL14' },
+    //   { full_name: 'Japanese/French', short_name: 'LLC', code: 'HSMC HS05' },
+    // ]);
+    // console.log('Created subjects:', subjects.length);
 
-    // Teachers
-    const teachers = await Teacher.insertMany([
-      { name: 'Mr. Sachine Soni', short_abbr: 'SS', code: '1', subjects: [subjects[0]._id], max_load_per_day: 4 },
-      { name: 'Mr. Prateek Nahar', short_abbr: 'PN', code: '2', subjects: [subjects[1]._id], max_load_per_day: 4 },
-      { name: 'Mr. Yagyapal Yadav', short_abbr: 'YY', code: '3', subjects: [subjects[2]._id, subjects[6]._id], max_load_per_day: 4 },
-      { name: 'Mr. Nayan Kumar Yadav', short_abbr: 'NKY', code: '4', subjects: [subjects[3]._id], max_load_per_day: 4 },
-      { name: 'Ms. Akanksha Jatav', short_abbr: 'AJ', code: '5', subjects: [subjects[4]._id], max_load_per_day: 4 },
-      { name: 'Mr. Shubham Kanungo', short_abbr: 'SK', code: '6', subjects: [subjects[5]._id], max_load_per_day: 4 },
-      { name: 'Ms. Abhilasha Vyas', short_abbr: 'AV', code: '7', subjects: [subjects[7]._id], max_load_per_day: 4 },
-    ]);
-    console.log('Created teachers:', teachers.length);
+    // // Teachers
+    // const teachers = await Teacher.insertMany([
+    //   { name: 'Mr. Sachine Soni', short_abbr: 'SS', code: '1', subjects: [subjects[0]._id], max_load_per_day: 4 },
+    //   { name: 'Mr. Prateek Nahar', short_abbr: 'PN', code: '2', subjects: [subjects[1]._id], max_load_per_day: 4 },
+    //   { name: 'Mr. Yagyapal Yadav', short_abbr: 'YY', code: '3', subjects: [subjects[2]._id, subjects[6]._id], max_load_per_day: 4 },
+    //   { name: 'Mr. Nayan Kumar Yadav', short_abbr: 'NKY', code: '4', subjects: [subjects[3]._id], max_load_per_day: 4 },
+    //   { name: 'Ms. Akanksha Jatav', short_abbr: 'AJ', code: '5', subjects: [subjects[4]._id], max_load_per_day: 4 },
+    //   { name: 'Mr. Shubham Kanungo', short_abbr: 'SK', code: '6', subjects: [subjects[5]._id], max_load_per_day: 4 },
+    //   { name: 'Ms. Abhilasha Vyas', short_abbr: 'AV', code: '7', subjects: [subjects[7]._id], max_load_per_day: 4 },
+    // ]);
+    // console.log('Created teachers:', teachers.length);
 
-    // Classes (code format: class_name + year_code + section; year_code: 1='', 2='S', 3='T', 4='F')
-    const classes = await Class.insertMany([
-      { class_name: 'CSEAIML', year: 3, section: '3', code: 'CSEAIMLT3', student_count: 60 },
-      { class_name: 'CSEAIML', year: 3, section: '4', code: 'CSEAIMLT4', student_count: 60 },
-    ]);
-    console.log('Created classes:', classes.length);
+    // // Classes (code format: class_name + year_code + section; year_code: 1='', 2='S', 3='T', 4='F')
+    // const classes = await Class.insertMany([
+    //   { class_name: 'CSEAIML', year: 3, section: '3', code: 'CSEAIMLT3', student_count: 60 },
+    //   { class_name: 'CSEAIML', year: 3, section: '4', code: 'CSEAIMLT4', student_count: 60 },
+    // ]);
+    // console.log('Created classes:', classes.length);
 
-    // Rooms
-    const rooms = await Room.insertMany([
-      { name: 'S-202', code: 'S202', capacity: 70 },
-      { name: 'N-206', code: 'N206', capacity: 70 },
-      { name: 'N-202', code: 'N202', capacity: 70 },
-    ]);
-    console.log('Created rooms:', rooms.length);
+    // // Rooms
+    // const rooms = await Room.insertMany([
+    //   { name: 'S-202', code: 'S202', capacity: 70 },
+    //   { name: 'N-206', code: 'N206', capacity: 70 },
+    //   { name: 'N-202', code: 'N202', capacity: 70 },
+    // ]);
+    // console.log('Created rooms:', rooms.length);
 
     // Labs
-    const labs = await Lab.insertMany([
-      { name: 'NLP Lab', short_name: 'NLP Lab', code: 'N107', room_number: 'N-107', capacity: 60 },
-      { name: 'DAT Lab', short_name: 'DAT Lab', code: 'N007', room_number: 'N-007', capacity: 60 },
-    ]);
-    console.log('Created labs:', labs.length);
+    // const labs = await Lab.insertMany([
+    //   { name: 'NLP Lab', short_name: 'NLP Lab', code: 'N107', room_number: 'N-107', capacity: 60 },
+    //   { name: 'DAT Lab', short_name: 'DAT Lab', code: 'N007', room_number: 'N-007', capacity: 60 },
+    // ]);
+    // console.log('Created labs:', labs.length);
 
     const createTime = (dateStr, h, m) => {
       const d = new Date(dateStr);
@@ -92,17 +92,17 @@ async function seed() {
       return d;
     };
 
-    const schedules = [
-      { class: classes[0]._id, subject: subjects[3]._id, teacher: teachers[3]._id, room: rooms[0]._id, roomModel: 'Room', type: 'LECTURE', day_of_week: 'MON', start_time: createTime('2026-01-05', 9, 45), end_time: createTime('2026-01-05', 10, 35) },
-      { class: classes[0]._id, subject: subjects[4]._id, teacher: teachers[4]._id, room: rooms[0]._id, roomModel: 'Room', type: 'LECTURE', day_of_week: 'MON', start_time: createTime('2026-01-05', 10, 35), end_time: createTime('2026-01-05', 11, 25) },
-      { class: classes[0]._id, subject: subjects[0]._id, teacher: teachers[0]._id, room: labs[0]._id, roomModel: 'Lab', type: 'LAB', day_of_week: 'TUE', start_time: createTime('2026-01-06', 9, 45), end_time: createTime('2026-01-06', 11, 25) },
-    ];
+    // const schedules = [
+    //   { class: classes[0]._id, subject: subjects[3]._id, teacher: teachers[3]._id, room: rooms[0]._id, roomModel: 'Room', type: 'LECTURE', day_of_week: 'MON', start_time: createTime('2026-01-05', 9, 45), end_time: createTime('2026-01-05', 10, 35) },
+    //   { class: classes[0]._id, subject: subjects[4]._id, teacher: teachers[4]._id, room: rooms[0]._id, roomModel: 'Room', type: 'LECTURE', day_of_week: 'MON', start_time: createTime('2026-01-05', 10, 35), end_time: createTime('2026-01-05', 11, 25) },
+    //   { class: classes[0]._id, subject: subjects[0]._id, teacher: teachers[0]._id, room: labs[0]._id, roomModel: 'Lab', type: 'LAB', day_of_week: 'TUE', start_time: createTime('2026-01-06', 9, 45), end_time: createTime('2026-01-06', 11, 25) },
+    // ];
 
-    await Schedule.insertMany(schedules);
-    console.log('Created schedules:', schedules.length);
+    // await Schedule.insertMany(schedules);
+    // console.log('Created schedules:', schedules.length);
 
     console.log('Seed completed successfully!');
-    console.log('\nLogin: admin123 / admin123');
+    console.log('\nLogin: admin123@gmail.com / admin123');
   } catch (err) {
     console.error('Seed failed:', err);
     process.exit(1);
