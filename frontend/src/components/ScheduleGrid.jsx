@@ -150,9 +150,12 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
               {TIMESLOTS.map((slot) => (
                 <th
                   key={`${slot.start}-${slot.end}`}
-                  className="border border-black/80 px-2 py-2 text-center text-xs font-medium text-gray-700 whitespace-nowrap"
+                  className="border border-black/80 px-1 py-1 text-center text-[10px] font-bold text-gray-700 leading-tight uppercase"
+                  style={{ minWidth: slot.type === 'slot' ? 120 : 35 }}
                 >
-                  {slot.label}
+                  <div className="whitespace-pre-line">
+                    {slot.label.replace('-', '-\n')}
+                  </div>
                 </th>
               ))}
             </tr>
@@ -178,12 +181,12 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
                         <td
                           key={key}
                           rowSpan={DAYS.length}
-                          className="border border-black/80 bg-amber-50 align-middle w-20"
-                          style={{ minWidth: 80 }}
+                          className="border border-black/80 bg-amber-50 align-middle w-10 text-center"
+                          style={{ minWidth: 35 }}
                         >
-                          <div className="flex items-center justify-center h-full min-h-[52px] py-2">
-                            <span className="text-amber-800 font-bold text-xs transform -rotate-90 whitespace-nowrap">
-                              BREAK
+                          <div className="flex items-center justify-center h-full min-h-[52px] py-4">
+                            <span className="text-amber-800 font-bold text-xl uppercase tracking-[0.2em] [writing-mode:vertical-lr] -rotate-180 scale-y-100">
+                              SHORT BREAK
                             </span>
                           </div>
                         </td>
@@ -200,12 +203,12 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
                         <td
                           key={key}
                           rowSpan={DAYS.length}
-                          className="border border-black/80 bg-emerald-50 align-middle w-20"
-                          style={{ minWidth: 80 }}
+                          className="border border-black/80 bg-emerald-50 align-middle w-10 text-center"
+                          style={{ minWidth: 35 }}
                         >
-                          <div className="flex items-center justify-center h-full min-h-[52px] py-2">
-                            <span className="text-emerald-800 font-bold text-xs transform -rotate-90 whitespace-nowrap">
-                              LUNCH
+                          <div className="flex items-center justify-center h-full min-h-[52px] py-4">
+                            <span className="text-emerald-800 font-bold text-xl uppercase tracking-[0.2em] [writing-mode:vertical-lr] -rotate-180 scale-y-100">
+                              LUNCH BREAK
                             </span>
                           </div>
                         </td>

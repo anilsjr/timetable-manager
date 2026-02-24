@@ -26,15 +26,15 @@ export function dateToTimeStr(date) {
 
 /** Timetable grid columns: editable slots + static BREAK and LUNCH */
 export const TIMESLOTS = [
-  { start: '09:45', end: '10:35', type: 'slot', label: '9:45 AM - 10:35 AM' },
-  { start: '10:35', end: '11:25', type: 'slot', label: '10:35 AM - 11:25 AM' },
-  { start: '11:25', end: '11:30', type: 'break', label: '11:25 AM - 11:30 AM' },
-  { start: '11:30', end: '12:20', type: 'slot', label: '11:30 AM - 12:20 PM' },
-  { start: '12:20', end: '13:10', type: 'slot', label: '12:20 PM - 1:10 PM' },
-  { start: '13:10', end: '13:40', type: 'lunch', label: '1:10 PM - 1:40 PM' },
-  { start: '13:40', end: '14:30', type: 'slot', label: '1:40 PM - 2:30 PM' },
-  { start: '14:30', end: '15:20', type: 'slot', label: '2:30 PM - 3:20 PM' },
-  { start: '15:20', end: '16:10', type: 'slot', label: '3:20 PM - 4:10 PM' },
+  { start: '09:45', end: '10:35', type: 'slot', label: '09:45-10:35' },
+  { start: '10:35', end: '11:25', type: 'slot', label: '10:35-11:25' },
+  { start: '11:25', end: '11:30', type: 'break', label: '11:25-11:30' },
+  { start: '11:30', end: '12:20', type: 'slot', label: '11:30-12:20' },
+  { start: '12:20', end: '13:10', type: 'slot', label: '12:20-01:10' },
+  { start: '13:10', end: '13:40', type: 'lunch', label: '01:10-01:40' },
+  { start: '13:40', end: '14:30', type: 'slot', label: '01:40-02:30' },
+  { start: '14:30', end: '15:20', type: 'slot', label: '02:30-03:20' },
+  { start: '15:20', end: '16:10', type: 'slot', label: '03:20-04:10' },
 ];
 
 const DAY_LABELS = { MON: 'Monday', TUE: 'Tuesday', WED: 'Wednesday', THU: 'Thursday', FRI: 'Friday', SAT: 'Saturday' };
