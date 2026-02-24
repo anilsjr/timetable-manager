@@ -16,7 +16,15 @@ const timeSlots = [
   { start: '15:20', end: '16:10', label: '3:20 PM - 4:10 PM' }
 ];
 
-const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+const dayLabels = {
+  'MON': 'Monday',
+  'TUE': 'Tuesday', 
+  'WED': 'Wednesday',
+  'THU': 'Thursday',
+  'FRI': 'Friday',
+  'SAT': 'Saturday'
+};
 
 // Helper function to get class timetable data
 async function getClassTimetableData(classId) {
@@ -26,10 +34,12 @@ async function getClassTimetableData(classId) {
   }
 
   const schedules = await Schedule.find({ class: classId })
-    .populate('subject', 'subject_name subject_code')
-    .populate('teacher', 'first_name last_name')
-    .populate('room', 'room_number lab_name')
+    .populate('subject', 'subject_name subject_code code short_name')
+    .populate('teacher', 'first_name last_name name')
+    .populate('room', 'room_number lab_name name')
     .lean();
+
+  console.log('Raw schedules from DB:', JSON.stringify(schedules, null, 2));
 
   // Create timetable grid
   const timetableGrid = {};
@@ -46,20 +56,67 @@ async function getClassTimetableData(classId) {
   });
 
   // Fill in schedules
+  console.log('Processing schedules for class:', classId);
+  console.log('Found schedules:', schedules.length);
+  
   schedules.forEach(schedule => {
     const day = schedule.day_of_week;
-    const startTime = schedule.start_time;
+    // Convert date to time string (HH:MM format)
+    let startTime = null;
+    if (schedule.start_time) {
+      if (typeof schedule.start_time === 'string') {
+        startTime = schedule.start_time;
+      } else {
+        // It's a Date object, convert it
+        const date = new Date(schedule.start_time);
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        startTime = `${hours}:${minutes}`;
+      }
+    }
     
-    if (timetableGrid[day] && timetableGrid[day][startTime] !== undefined) {
+    console.log(`Schedule: Day=${day}, StartTime=${startTime}, Subject=${schedule.subject?.subject_name}, Teacher=${schedule.teacher?.first_name} ${schedule.teacher?.last_name}`);
+    
+    // Try exact match first
+    if (timetableGrid[day] && startTime && timetableGrid[day][startTime] !== undefined) {
       timetableGrid[day][startTime] = {
-        subject: schedule.subject?.subject_name || 'N/A',
-        subjectCode: schedule.subject?.subject_code || '',
-        teacher: schedule.teacher ? `${schedule.teacher.first_name} ${schedule.teacher.last_name}` : 'N/A',
-        room: schedule.room?.room_number || schedule.room?.lab_name || 'N/A',
+        subject: schedule.subject?.subject_name || schedule.subject?.short_name || schedule.subject?.code || 'N/A',
+        subjectCode: schedule.subject?.subject_code || schedule.subject?.code || '',
+        teacher: schedule.teacher ? 
+          (schedule.teacher.name || `${schedule.teacher.first_name || ''} ${schedule.teacher.last_name || ''}`.trim()) : 'N/A',
+        room: schedule.room?.room_number || schedule.room?.lab_name || schedule.room?.name || 'N/A',
         type: schedule.type || 'LECTURE'
       };
+      console.log(`Mapped to grid: ${day}[${startTime}]j`, timetableGrid[day][startTime]);
+    } else {
+      console.log(`No exact match for: Day=${day}, StartTime=${startTime} in timetable grid`);
+      console.log('Available time slots for day:', Object.keys(timetableGrid[day] || {}));
+      
+      // Try to find closest matching time slot
+      if (timetableGrid[day] && startTime) {
+        const availableSlots = Object.keys(timetableGrid[day]).filter(slot => slot !== 'BREAK' && slot !== 'LUNCH');
+        const closestSlot = availableSlots.find(slot => {
+          const [slotHour, slotMin] = slot.split(':').map(Number);
+          const [schedHour, schedMin] = startTime.split(':').map(Number);
+          return Math.abs((slotHour * 60 + slotMin) - (schedHour * 60 + schedMin)) <= 5; // 5 minute tolerance
+        });
+        
+        if (closestSlot && timetableGrid[day][closestSlot] === null) {
+          timetableGrid[day][closestSlot] = {
+            subject: schedule.subject?.subject_name || schedule.subject?.short_name || schedule.subject?.code || 'N/A',
+            subjectCode: schedule.subject?.subject_code || schedule.subject?.code || '',
+            teacher: schedule.teacher ? 
+              (schedule.teacher.name || `${schedule.teacher.first_name || ''} ${schedule.teacher.last_name || ''}`.trim()) : 'N/A',
+            room: schedule.room?.room_number || schedule.room?.lab_name || schedule.room?.name || 'N/A',
+            type: schedule.type || 'LECTURE'
+          };
+          console.log(`Mapped to closest slot: ${day}[${closestSlot}]`, timetableGrid[day][closestSlot]);
+        }
+      }
     }
   });
+
+  console.log('Final timetable grid:', JSON.stringify(timetableGrid, null, 2));
 
   return {
     class: classData,
@@ -94,7 +151,7 @@ async function generateExcel(classData) {
 
   // Add data
   days.forEach(day => {
-    const rowData = [day];
+    const rowData = [dayLabels[day]];
     timeSlots.forEach(slot => {
       const cell = classData.timetable[day][slot.start];
       if (cell && cell.type === 'BREAK') {
@@ -180,7 +237,7 @@ async function generatePDF(classData) {
     // Day column
     doc.rect(currentX, currentY, columnWidth, rowHeight).stroke();
     doc.fontSize(10).font('Helvetica-Bold');
-    doc.text(day, currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
+    doc.text(dayLabels[day], currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
     currentX += columnWidth;
 
     // Time slot columns
@@ -215,6 +272,71 @@ async function generatePDF(classData) {
   return doc;
 }
 
+// Generate JSON export
+function generateJSON(classData) {
+  return {
+    institute: 'IPS Academy Timetable Management',
+    exportDate: new Date().toISOString(),
+    class: {
+      id: classData.class._id,
+      code: classData.class.code,
+      name: classData.class.class_name,
+      year: classData.class.year,
+      section: classData.class.section,
+      displayName: classData.class.code || `${classData.class.class_name}-${classData.class.year}${classData.class.section}`
+    },
+    timeSlots: timeSlots.map(slot => ({
+      start: slot.start,
+      end: slot.end,
+      label: slot.label,
+      type: slot.start === 'BREAK' || slot.start === 'LUNCH' ? slot.start : 'SLOT'
+    })),
+    days: days.map(day => ({
+      code: day,
+      name: dayLabels[day]
+    })),
+    timetable: Object.entries(classData.timetable).map(([dayCode, daySchedule]) => ({
+      day: {
+        code: dayCode,
+        name: dayLabels[dayCode]
+      },
+      schedule: Object.entries(daySchedule).map(([timeSlot, scheduleData]) => {
+        if (scheduleData && scheduleData.type === 'BREAK') {
+          return {
+            timeSlot,
+            type: 'BREAK',
+            label: 'BREAK'
+          };
+        }
+        if (scheduleData && scheduleData.type === 'LUNCH') {
+          return {
+            timeSlot,
+            type: 'LUNCH',
+            label: 'LUNCH'
+          };
+        }
+        if (scheduleData && scheduleData.subject) {
+          return {
+            timeSlot,
+            type: scheduleData.type || 'LECTURE',
+            subject: {
+              name: scheduleData.subject,
+              code: scheduleData.subjectCode
+            },
+            teacher: scheduleData.teacher,
+            room: scheduleData.room
+          };
+        }
+        return {
+          timeSlot,
+          type: 'EMPTY',
+          label: 'No Class'
+        };
+      })
+    }))
+  };
+}
+
 // Single class export endpoint
 export async function exportTimetable(req, res) {
   try {
@@ -224,8 +346,8 @@ export async function exportTimetable(req, res) {
       return res.status(400).json({ error: 'Class ID and format are required' });
     }
 
-    if (!['excel', 'pdf'].includes(format.toLowerCase())) {
-      return res.status(400).json({ error: 'Format must be either excel or pdf' });
+    if (!['excel', 'pdf', 'json'].includes(format.toLowerCase())) {
+      return res.status(400).json({ error: 'Format must be excel, pdf, or json' });
     }
 
     const classData = await getClassTimetableData(classId);
@@ -244,7 +366,7 @@ export async function exportTimetable(req, res) {
 
       await workbook.xlsx.write(res);
       res.end();
-    } else {
+    } else if (format.toLowerCase() === 'pdf') {
       const doc = await generatePDF(classData);
       
       res.setHeader('Content-Type', 'application/pdf');
@@ -255,6 +377,17 @@ export async function exportTimetable(req, res) {
 
       doc.pipe(res);
       doc.end();
+    } else {
+      // JSON format
+      const jsonData = generateJSON(classData);
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="timetable-${classData.class.code || classData.class.class_name}.json"`
+      );
+
+      res.json(jsonData);
     }
   } catch (error) {
     console.error('Export error:', error);
@@ -271,8 +404,8 @@ export async function exportBulkTimetables(req, res) {
       return res.status(400).json({ error: 'Class IDs array is required' });
     }
 
-    if (!format || !['excel', 'pdf'].includes(format.toLowerCase())) {
-      return res.status(400).json({ error: 'Format must be either excel or pdf' });
+    if (!format || !['excel', 'pdf', 'json'].includes(format.toLowerCase())) {
+      return res.status(400).json({ error: 'Format must be excel, pdf, or json' });
     }
 
     const classesData = await Promise.all(
@@ -309,7 +442,7 @@ export async function exportBulkTimetables(req, res) {
 
         // Add data
         days.forEach(day => {
-          const rowData = [day];
+          const rowData = [dayLabels[day]];
           timeSlots.forEach(slot => {
             const cell = classData.timetable[day][slot.start];
             if (cell && cell.type === 'BREAK') {
@@ -364,7 +497,7 @@ export async function exportBulkTimetables(req, res) {
 
       await workbook.xlsx.write(res);
       res.end();
-    } else {
+    } else if (format.toLowerCase() === 'pdf') {
       // Create single PDF with multiple classes
       const doc = new PDFDocument({ size: 'A4', layout: 'landscape', margin: 30 });
       
@@ -413,7 +546,7 @@ export async function exportBulkTimetables(req, res) {
           
           doc.rect(currentX, currentY, columnWidth, rowHeight).stroke();
           doc.fontSize(10).font('Helvetica-Bold');
-          doc.text(day, currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
+          doc.text(dayLabels[day], currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
           currentX += columnWidth;
 
           timeSlots.forEach(slot => {
@@ -446,6 +579,23 @@ export async function exportBulkTimetables(req, res) {
       }
 
       doc.end();
+    } else {
+      // JSON format - bulk export as array of class timetables
+      const bulkJsonData = {
+        institute: 'IPS Academy Timetable Management',
+        exportDate: new Date().toISOString(),
+        exportType: 'bulk',
+        totalClasses: classesData.length,
+        classes: classesData.map(classData => generateJSON(classData))
+      };
+      
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader(
+        'Content-Disposition',
+        'attachment; filename="bulk-timetables.json"'
+      );
+
+      res.json(bulkJsonData);
     }
   } catch (error) {
     console.error('Bulk export error:', error);

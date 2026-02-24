@@ -169,6 +169,24 @@ export default function ExportTimetables() {
               </div>
               <span className="text-xs text-gray-500">- Each class on separate page</span>
             </label>
+
+            <label className="flex items-center space-x-3 cursor-pointer">
+              <input
+                type="radio"
+                name="format"
+                value="json"
+                checked={format === 'json'}
+                onChange={(e) => setFormat(e.target.value)}
+                className="w-4 h-4 text-blue-600 border-gray-300 focus:ring-blue-500"
+              />
+              <div className="flex items-center space-x-2">
+                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                <span className="text-sm font-medium text-gray-700">JSON (.json)</span>
+              </div>
+              <span className="text-xs text-gray-500">- Structured data for integrations</span>
+            </label>
           </div>
         </div>
 
@@ -214,6 +232,7 @@ export default function ExportTimetables() {
             <ul className="space-y-1 text-blue-700">
               <li>• <strong>Excel:</strong> Each class will be exported in a separate worksheet within a single Excel file.</li>
               <li>• <strong>PDF:</strong> Each class will be displayed on a separate page within a single PDF file.</li>
+              <li>• <strong>JSON:</strong> Structured data format with all classes in a single file, perfect for API integrations.</li>
               <li>• All exports include institute name, class information, break/lunch periods, and generation timestamp.</li>
               <li>• Only admin users can export timetables for security purposes.</li>
             </ul>

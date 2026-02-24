@@ -1,6 +1,17 @@
 import { useMemo } from 'react';
 import { DAYS, TIMESLOTS, getDayLabel } from '../utils/dateHelpers';
 
+// Helper to format time for break/lunch display
+function formatTimeSlot(start, end) {
+  const formatTime = (time) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    const period = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+    return `${displayHours}:${String(minutes).padStart(2, '0')} ${period}`;
+  };
+  return `${formatTime(start)} - ${formatTime(end)}`;
+}
+
 function formatTime(date) {
   if (!date) return '';
   const d = date instanceof Date ? date : new Date(date);
@@ -128,20 +139,20 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
   }, [schedules]);
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+    <div className="rounded-xl border border-black/80 bg-white shadow-sm overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse min-w-[800px]">
           <thead>
             <tr className="bg-gray-100">
-              <th className="border border-gray-200 px-3 py-2 text-left text-sm font-semibold text-gray-700 w-28">
+              <th className="border border-black/80 px-3 py-2 text-left text-sm font-semibold text-gray-700 w-28">
                 Day
               </th>
               {TIMESLOTS.map((slot) => (
                 <th
                   key={`${slot.start}-${slot.end}`}
-                  className="border border-gray-200 px-2 py-2 text-center text-xs font-medium text-gray-700 whitespace-nowrap"
+                  className="border border-black/80 px-2 py-2 text-center text-xs font-medium text-gray-700 whitespace-nowrap"
                 >
-                  {slot.type === 'slot' ? slot.label : ''}
+                  {slot.label}
                 </th>
               ))}
             </tr>
@@ -149,7 +160,7 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
           <tbody>
             {DAYS.map((day) => (
               <tr key={day} className="bg-white">
-                <td className="border border-gray-200 px-3 py-2 text-sm font-medium text-gray-800">
+                <td className="border border-black/80 px-3 py-2 text-sm font-medium text-gray-800">
                   {getDayLabel(day)}
                 </td>
                 {TIMESLOTS.map((slot) => {
@@ -161,34 +172,48 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
                   }
                   
                   if (slot.type === 'break') {
-                    return (
-                      <td
-                        key={key}
-                        className="border border-gray-200 bg-amber-50 align-middle w-12"
-                        style={{ minWidth: 40 }}
-                      >
-                        <div className="flex items-center justify-center h-full min-h-[52px] py-2">
-                          <span className="text-amber-800 font-medium text-xs transform -rotate-90 whitespace-nowrap tracking-wide">
-                            BREAK
-                          </span>
-                        </div>
-                      </td>
-                    );
+                    // Only render break cell for the first day, span all days
+                    if (day === DAYS[0]) {
+                      return (
+                        <td
+                          key={key}
+                          rowSpan={DAYS.length}
+                          className="border border-black/80 bg-amber-50 align-middle w-20"
+                          style={{ minWidth: 80 }}
+                        >
+                          <div className="flex items-center justify-center h-full min-h-[52px] py-2">
+                            <span className="text-amber-800 font-bold text-xs transform -rotate-90 whitespace-nowrap">
+                              BREAK
+                            </span>
+                          </div>
+                        </td>
+                      );
+                    } else {
+                      // Skip break cells for other days since first day spans all rows
+                      return null;
+                    }
                   }
                   if (slot.type === 'lunch') {
-                    return (
-                      <td
-                        key={key}
-                        className="border border-gray-200 bg-emerald-50 align-middle w-12"
-                        style={{ minWidth: 40 }}
-                      >
-                        <div className="flex items-center justify-center h-full min-h-[52px] py-2">
-                          <span className="text-emerald-800 font-medium text-xs transform -rotate-90 whitespace-nowrap tracking-wide">
-                            LUNCH
-                          </span>
-                        </div>
-                      </td>
-                    );
+                    // Only render lunch cell for the first day, span all days
+                    if (day === DAYS[0]) {
+                      return (
+                        <td
+                          key={key}
+                          rowSpan={DAYS.length}
+                          className="border border-black/80 bg-emerald-50 align-middle w-20"
+                          style={{ minWidth: 80 }}
+                        >
+                          <div className="flex items-center justify-center h-full min-h-[52px] py-2">
+                            <span className="text-emerald-800 font-bold text-xs transform -rotate-90 whitespace-nowrap">
+                              LUNCH
+                            </span>
+                          </div>
+                        </td>
+                      );
+                    } else {
+                      // Skip lunch cells for other days since first day spans all rows
+                      return null;
+                    }
                   }
                   
                   const sched = cellMap.map.get(key);
@@ -201,7 +226,7 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
                     <td
                       key={key}
                       colSpan={isLab ? 2 : 1}
-                      className={`border border-gray-200 align-top ${fillClass} p-0`}
+                      className={`border border-black/80 align-top ${fillClass} p-0`}
                     >
                       <button
                         type="button"

@@ -296,12 +296,12 @@ export default function AddScheduleModal({
             />
             {type === 'LAB' && (
               <p className="text-xs text-blue-600 mt-1">
-                Auto-calculated (2 slots)
+                2 slot (Auto-update)
               </p>
             )}
             {type === 'LECTURE' && (
               <p className="text-xs text-blue-600 mt-1">
-                Auto-calculated (1 slot)
+                1 slot (Auto-update)
               </p>
             )}
           </div>
@@ -333,15 +333,19 @@ export default function AddScheduleModal({
                 </label>
               </div>
               {type === 'LAB' && !slotLabWarning && (
-                <p className="mt-2 text-sm text-blue-600 bg-blue-50 p-2 rounded border border-blue-200">
-                  ℹ️ Lab sessions occupy 2 continuous slots (100 minutes total). End time is auto-calculated.
+                <p 
+                  className="mt-2 text-sm text-blue-600 bg-blue-50 p-2 rounded border border-blue-200 cursor-help"
+                  title="Lab sessions occupy 2 continuous slots (100 minutes total). End time is auto-calculated."
+                >
+                  ℹ️ Lab session (2 slots, 100 min)
                 </p>
               )}
               {slotLabWarning && (
-                <div className="mt-2 text-sm text-amber-700 bg-amber-50 p-3 rounded border border-amber-300">
-                  <p className="font-medium mb-1">⚠️ Cannot schedule lab at this time</p>
-                  <p className="text-xs">{slotLabWarning}</p>
-                  <p className="text-xs mt-1">Valid lab times: 09:45, 11:30, 13:40, 14:30</p>
+                <div 
+                  className="mt-2 text-sm text-amber-700 bg-amber-50 p-3 rounded border border-amber-300 cursor-help"
+                  title={`⚠️ Cannot schedule lab at this time\n${slotLabWarning}\nValid lab times: 09:45, 11:30, 13:40, 14:30`}
+                >
+                  <p className="font-medium">⚠️ Cannot schedule lab here</p>
                 </div>
               )}
             </>

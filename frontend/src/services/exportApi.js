@@ -3,12 +3,35 @@ import api from './api.js';
 // Export single class timetable
 export async function exportTimetable(classId, format) {
   try {
-    const response = await api.get(`/timetable/export`, {
-      params: { classId, format },
-      responseType: 'blob'
-    });
+    const config = {
+      params: { classId, format }
+    };
     
-    // Create download link
+    // For JSON format, we don't need blob response type
+    if (format !== 'json') {
+      config.responseType = 'blob';
+    }
+    
+    const response = await api.get(`/api/timetable/export`, config);
+    
+    // Handle JSON format differently
+    if (format === 'json') {
+      const jsonStr = JSON.stringify(response.data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `timetable-${Date.now()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      return response;
+    }
+    
+    // Handle Excel and PDF formats
     const blob = new Blob([response.data], {
       type: format === 'excel' 
         ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -46,12 +69,33 @@ export async function exportTimetable(classId, format) {
 // Export multiple class timetables
 export async function exportBulkTimetables(classIds, format) {
   try {
-    const response = await api.post('/timetable/export/bulk', 
+    const config = {
+      responseType: format === 'json' ? undefined : 'blob'
+    };
+    
+    const response = await api.post('/api/timetable/export/bulk', 
       { classIds, format },
-      { responseType: 'blob' }
+      config
     );
     
-    // Create download link
+    // Handle JSON format differently
+    if (format === 'json') {
+      const jsonStr = JSON.stringify(response.data, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `bulk-timetables-${Date.now()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      return response;
+    }
+    
+    // Handle Excel and PDF formats
     const blob = new Blob([response.data], {
       type: format === 'excel' 
         ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'

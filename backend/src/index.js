@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import connectDB from './config/db.js';
 import errorHandler from './middlewares/errorHandler.js';
+import apiLogger from './middlewares/apiLogger.js';
 import logger from './utils/logger.js';
 import authRoutes from './routes/authRoutes.js';
 import subjectRoutes from './routes/subjectRoutes.js';
@@ -22,6 +23,9 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// API request logging for debugging
+app.use(apiLogger);
 
 app.use('/api/auth', authRoutes);
 app.use('/api/subjects', subjectRoutes);
