@@ -62,7 +62,7 @@ function renderCellContent(schedule) {
             {singleLine}
           </span>
           <span className="block text-xs text-purple-700 mt-0.5">
-            Click to edit • 2 slots
+            .
           </span>
         </div>
       ),
