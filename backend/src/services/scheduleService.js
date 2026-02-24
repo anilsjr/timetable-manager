@@ -21,6 +21,7 @@ function toDate(dayOfWeek, timeStr) {
 function normalizePayload(body) {
   const classId = body.classId || body.class;
   const subjectId = body.subjectId || body.subject;
+  const labId = body.labId || body.lab;
   const teacherId = body.teacherId || body.teacher;
   const day = body.day || body.day_of_week;
   const startTime = body.startTime || body.start_time;
@@ -45,6 +46,7 @@ function normalizePayload(body) {
   const normalized = {
     class: classId,
     subject: subjectId ?? null,
+    lab: labId ?? null,
     teacher: teacherId ?? null,
     type: type,
     day_of_week: day,
@@ -68,6 +70,17 @@ async function ensureTeacherCanTeachSubject(teacherId, subjectId) {
   }
 }
 
+async function ensureTeacherCanTeachLab(teacherId, labId) {
+  const teacher = await Teacher.findById(teacherId).lean();
+  if (!teacher) throw new Error('Teacher not found');
+  const labIds = (teacher.labs || []).map((l) => (l && typeof l === 'object' && l.toString ? l.toString() : String(l)));
+  if (!labIds.length || !labIds.includes(String(labId))) {
+    const err = new Error('Teacher not assigned to this lab');
+    err.code = 400;
+    throw err;
+  }
+}
+
 export const listSchedules = async ({ page = 1, limit = 10, search = '', classId, teacherId }) => {
   const query = {};
   if (classId) query.class = classId;
@@ -81,6 +94,7 @@ export const listSchedules = async ({ page = 1, limit = 10, search = '', classId
     Schedule.find(query)
       .populate('class', 'class_name year section code')
       .populate('subject', 'full_name short_name code')
+      .populate('lab', 'name short_name code')
       .populate('teacher', 'name short_abbr')
       .sort({ day_of_week: 1, start_time: 1 })
       .skip(skip)
@@ -95,6 +109,7 @@ export const getSchedulesByClass = async (classId) => {
   const data = await Schedule.find({ class: classId })
     .populate('class', 'class_name year section code')
     .populate('subject', 'full_name short_name code')
+    .populate('lab', 'name short_name code')
     .populate('teacher', 'name short_abbr')
     .populate('room', 'name short_name code room_number')
     .sort({ day_of_week: 1, start_time: 1 })
@@ -106,6 +121,7 @@ export const getScheduleById = async (id) => {
   const schedule = await Schedule.findById(id)
     .populate('class', 'class_name year section code student_count')
     .populate('subject', 'full_name short_name code')
+    .populate('lab', 'name short_name code')
     .populate('teacher', 'name short_abbr')
     .lean();
   if (!schedule) throw new Error('Schedule not found');
@@ -117,6 +133,9 @@ export const createSchedule = async (payload) => {
   if (normalized.teacher && normalized.subject) {
     await ensureTeacherCanTeachSubject(normalized.teacher, normalized.subject);
   }
+  if (normalized.teacher && normalized.lab) {
+    await ensureTeacherCanTeachLab(normalized.teacher, normalized.lab);
+  }
   const conflict = await checkConflicts(normalized);
   if (conflict) {
     const err = new Error(conflict.message);
@@ -127,6 +146,7 @@ export const createSchedule = async (payload) => {
   return Schedule.findById(doc._id)
     .populate('class', 'class_name year section code')
     .populate('subject', 'full_name short_name code')
+    .populate('lab', 'name short_name code')
     .populate('teacher', 'name short_abbr')
     .lean();
 };
@@ -135,6 +155,9 @@ export const updateSchedule = async (id, payload) => {
   const normalized = normalizePayload(payload);
   if (normalized.teacher && normalized.subject) {
     await ensureTeacherCanTeachSubject(normalized.teacher, normalized.subject);
+  }
+  if (normalized.teacher && normalized.lab) {
+    await ensureTeacherCanTeachLab(normalized.teacher, normalized.lab);
   }
   const conflict = await checkConflicts(normalized, id);
   if (conflict) {
@@ -148,6 +171,7 @@ export const updateSchedule = async (id, payload) => {
   })
     .populate('class', 'class_name year section code')
     .populate('subject', 'full_name short_name code')
+    .populate('lab', 'name short_name code')
     .populate('teacher', 'name short_abbr');
   if (!schedule) throw new Error('Schedule not found');
   return schedule;

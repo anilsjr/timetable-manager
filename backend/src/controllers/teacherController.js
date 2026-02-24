@@ -33,6 +33,20 @@ export const getTeachersBySubject = async (req, res, next) => {
   }
 };
 
+export const getTeachersByLab = async (req, res, next) => {
+  try {
+    const { day, startTime, excludeScheduleId } = req.query;
+    const teachers = await teacherService.getTeachersByLab(req.params.labId, {
+      day: day || undefined,
+      startTime: startTime || undefined,
+      excludeScheduleId: excludeScheduleId || undefined,
+    });
+    res.json({ success: true, data: teachers });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const create = async (req, res, next) => {
   try {
     const teacher = await teacherService.createTeacher(req.body);

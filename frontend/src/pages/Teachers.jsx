@@ -10,12 +10,14 @@ import ModalForm from '../components/ModalForm';
 import ConfirmDialog from '../components/ConfirmDialog';
 import * as teacherApi from '../services/teacherApi';
 import * as subjectApi from '../services/subjectApi';
+import * as labApi from '../services/labApi';
 
 const schema = z.object({
   name: z.string().min(1, 'Name required'),
   short_abbr: z.string().min(1, 'Short abbreviation required'),
   code: z.string().optional(),
   subjects: z.array(z.string()).optional().default([]),
+  labs: z.array(z.string()).optional().default([]),
   max_load_per_day: z.coerce.number().int().min(1).optional().nullable(),
 });
 
@@ -46,6 +48,29 @@ const columns = [
       );
     },
   },
+  {
+    key: 'labs',
+    label: 'Labs',
+    render: (_, row) => {
+      const labs = row.labs || [];
+      if (!labs.length) return '—';
+      return (
+        <div className="flex flex-wrap gap-1.5">
+          {labs.map((l, i) => {
+            const label = typeof l === 'object' ? `${l.short_name} (${l.code})` : l;
+            return (
+              <span
+                key={l._id || i}
+                className="inline-block px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800"
+              >
+                {label}
+              </span>
+            );
+          })}
+        </div>
+      );
+    },
+  },
 ];
 
 export default function Teachers() {
@@ -61,6 +86,8 @@ export default function Teachers() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [subjects, setSubjects] = useState([]);
   const [subjectSearch, setSubjectSearch] = useState('');
+  const [labs, setLabs] = useState([]);
+  const [labSearch, setLabSearch] = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -81,6 +108,7 @@ export default function Teachers() {
 
   useEffect(() => {
     subjectApi.getSubjects({ page: 1, limit: 100 }).then((r) => setSubjects(r.data)).catch(() => {});
+    labApi.getLabs({ page: 1, limit: 100 }).then((r) => setLabs(r.data)).catch(() => {});
   }, []);
 
   const handleSearch = useCallback((val) => {
@@ -97,13 +125,14 @@ export default function Teachers() {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', short_abbr: '', code: '', subjects: [], max_load_per_day: null },
+    defaultValues: { name: '', short_abbr: '', code: '', subjects: [], labs: [], max_load_per_day: null },
   });
 
   const openCreate = () => {
     setEditing(null);
-    reset({ name: '', short_abbr: '', code: '', subjects: [], max_load_per_day: null });
+    reset({ name: '', short_abbr: '', code: '', subjects: [], labs: [], max_load_per_day: null });
     setSubjectSearch('');
+    setLabSearch('');
     setModalOpen(true);
   };
 
@@ -114,15 +143,17 @@ export default function Teachers() {
       short_abbr: row.short_abbr,
       code: row.code || '',
       subjects: (row.subjects || []).map((s) => (typeof s === 'object' ? s._id : s)),
+      labs: (row.labs || []).map((l) => (typeof l === 'object' ? l._id : l)),
       max_load_per_day: row.max_load_per_day ?? null,
     });
     setSubjectSearch('');
+    setLabSearch('');
     setModalOpen(true);
   };
 
   const onSubmit = async (values) => {
     try {
-      const payload = { ...values, subjects: values.subjects || [] };
+      const payload = { ...values, subjects: values.subjects || [], labs: values.labs || [] };
       if (editing) {
         await teacherApi.updateTeacher(editing._id, payload);
         toast.success('Teacher updated');
@@ -281,6 +312,80 @@ export default function Teachers() {
                         />
                         <span className="text-sm">
                           {s.short_name} ({s.code})
+                        </span>
+                      </label>
+                    );
+                  });
+                })()
+              )}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Labs</label>
+            <p className="text-xs text-gray-500 mb-2">Select the labs this teacher is assigned to</p>
+            {labs.length > 0 && (
+              <div className="relative mb-2">
+                <input
+                  type="text"
+                  placeholder="Search labs..."
+                  value={labSearch}
+                  onChange={(e) => setLabSearch(e.target.value)}
+                  className="w-full px-3 py-2 pr-8 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+                {labSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setLabSearch('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="border rounded p-3 max-h-48 overflow-y-auto bg-gray-50 space-y-2">
+              {labs.length === 0 ? (
+                <p className="text-sm text-gray-500">No labs available. Add labs first.</p>
+              ) : (
+                (() => {
+                  const filteredLabs = labs.filter((l) => {
+                    if (!labSearch.trim()) return true;
+                    const searchLower = labSearch.toLowerCase();
+                    return (
+                      l.name?.toLowerCase().includes(searchLower) ||
+                      l.short_name?.toLowerCase().includes(searchLower) ||
+                      l.code?.toLowerCase().includes(searchLower)
+                    );
+                  });
+
+                  if (filteredLabs.length === 0) {
+                    return <p className="text-sm text-gray-500">No labs found matching "{labSearch}"</p>;
+                  }
+
+                  return filteredLabs.map((l) => {
+                    const selected = (watch('labs') || []).includes(l._id);
+                    return (
+                      <label
+                        key={l._id}
+                        className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded px-2 py-1.5 -mx-2"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={(e) => {
+                            const current = watch('labs') || [];
+                            if (e.target.checked) {
+                              setValue('labs', [...current, l._id]);
+                            } else {
+                              setValue('labs', current.filter((id) => id !== l._id));
+                            }
+                          }}
+                          className="rounded border-gray-300 text-green-600 focus:ring-green-500"
+                        />
+                        <span className="text-sm">
+                          {l.short_name} ({l.code})
                         </span>
                       </label>
                     );

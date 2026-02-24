@@ -9,6 +9,8 @@ export const createTeacher = [
   body('code').optional().trim(),
   body('subjects').optional().isArray().withMessage('Subjects must be an array'),
   body('subjects.*').optional().isMongoId().withMessage('Invalid subject ID'),
+  body('labs').optional().isArray().withMessage('Labs must be an array'),
+  body('labs.*').optional().isMongoId().withMessage('Invalid lab ID'),
   body('max_load_per_day').optional().isInt({ min: 1 }).withMessage('Max load must be positive'),
 ];
 
@@ -19,6 +21,8 @@ export const updateTeacher = [
   body('code').optional().trim(),
   body('subjects').optional().isArray(),
   body('subjects.*').optional().isMongoId(),
+  body('labs').optional().isArray(),
+  body('labs.*').optional().isMongoId(),
   body('max_load_per_day').optional().isInt({ min: 1 }),
 ];
 
@@ -26,6 +30,13 @@ export const getById = [param('id').isMongoId().withMessage('Invalid teacher ID'
 
 export const getTeachersBySubject = [
   param('subjectId').isMongoId().withMessage('Invalid subject ID'),
+  query('day').optional().isIn(DAY_ENUM),
+  query('startTime').optional().matches(timePattern),
+  query('excludeScheduleId').optional().isMongoId(),
+];
+
+export const getTeachersByLab = [
+  param('labId').isMongoId().withMessage('Invalid lab ID'),
   query('day').optional().isIn(DAY_ENUM),
   query('startTime').optional().matches(timePattern),
   query('excludeScheduleId').optional().isMongoId(),

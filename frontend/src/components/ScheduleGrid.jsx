@@ -145,7 +145,7 @@ export default function ScheduleGrid({ schedules = [], onCellClick }) {
           <thead>
             <tr className="bg-gray-100">
               <th className="border border-black/80 px-3 py-2 text-left text-sm font-semibold text-gray-700 w-28">
-                Day
+                Day/TIME
               </th>
               {TIMESLOTS.map((slot) => (
                 <th

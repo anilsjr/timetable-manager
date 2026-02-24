@@ -7,6 +7,7 @@ const scheduleSchema = new mongoose.Schema(
   {
     class: { type: mongoose.Schema.Types.ObjectId, ref: 'Class', required: true },
     subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', default: null },
+    lab: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab', default: null },
     teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
     room: { type: mongoose.Schema.Types.ObjectId, refPath: 'roomModel', default: null },
     roomModel: { type: String, enum: ['Room', 'Lab'], default: null },

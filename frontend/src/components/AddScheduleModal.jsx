@@ -46,6 +46,7 @@ export default function AddScheduleModal({
   const [classSubjects, setClassSubjects] = useState([]);
   const [classLabs, setClassLabs] = useState([]);
   const [teachersBySubject, setTeachersBySubject] = useState([]);
+  const [teachersByLab, setTeachersByLab] = useState([]);
   const [subjectsLoading, setSubjectsLoading] = useState(false);
   const [labsLoading, setLabsLoading] = useState(false);
   const [teachersLoading, setTeachersLoading] = useState(false);
@@ -74,12 +75,15 @@ export default function AddScheduleModal({
   const type = watch('type');
   const classId = watch('classId');
   const subjectId = watch('subjectId');
+  const labId = watch('labId');
   const day = watch('day');
   const startTime = watch('startTime');
 
   const isSubjectType = type === 'LECTURE';
+  const isLabType = type === 'LAB';
   const subjectEnabled = isSubjectType;
-  const teacherEnabled = isSubjectType && !!subjectId;
+  const labEnabled = isLabType;
+  const teacherEnabled = (isSubjectType && !!subjectId) || (isLabType && !!labId);
   const currentClassId = watch('classId');
   const displayClasses = currentClassId
     ? classes.filter((c) => c._id === currentClassId)
@@ -134,7 +138,6 @@ export default function AddScheduleModal({
       .finally(() => setSubjectsLoading(false));
   }, [classId, isSubjectType, setValue]);
 
-  const isLabType = type === 'LAB';
   useEffect(() => {
     if (!classId || !isLabType) {
       setClassLabs([]);
@@ -153,9 +156,9 @@ export default function AddScheduleModal({
   }, [classId, isLabType, setValue]);
 
   useEffect(() => {
-    if (!subjectId || !teacherEnabled) {
+    if (!subjectId || !teacherEnabled || !isSubjectType) {
       setTeachersBySubject([]);
-      setValue('teacherId', '');
+      if (isSubjectType) setValue('teacherId', '');
       return;
     }
     setTeachersLoading(true);
@@ -169,7 +172,26 @@ export default function AddScheduleModal({
         setTeachersBySubject([]);
       })
       .finally(() => setTeachersLoading(false));
-  }, [subjectId, teacherEnabled, day, startTime, editing, setValue]);
+  }, [subjectId, teacherEnabled, isSubjectType, day, startTime, editing, setValue]);
+
+  useEffect(() => {
+    if (!labId || !teacherEnabled || !isLabType) {
+      setTeachersByLab([]);
+      if (isLabType) setValue('teacherId', '');
+      return;
+    }
+    setTeachersLoading(true);
+    const params = { day, startTime };
+    if (editing?._id) params.excludeScheduleId = editing._id;
+    teacherApi
+      .getTeachersByLab(labId, params)
+      .then((list) => setTeachersByLab(Array.isArray(list) ? list : []))
+      .catch(() => {
+        toast.error('Failed to load teachers');
+        setTeachersByLab([]);
+      })
+      .finally(() => setTeachersLoading(false));
+  }, [labId, teacherEnabled, isLabType, day, startTime, editing, setValue]);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -187,8 +209,12 @@ export default function AddScheduleModal({
       p.teacherId = values.teacherId;
     }
     if (values.type === 'LAB' && values.labId) {
+      p.labId = values.labId;
       p.room = values.labId;
       p.roomModel = 'Lab';
+      if (values.teacherId) {
+        p.teacherId = values.teacherId;
+      }
     }
     return p;
   };
@@ -419,6 +445,30 @@ export default function AddScheduleModal({
               )}
             </div>
           </>
+        )}
+
+        {isLabType && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Lab Teacher</label>
+            <select
+              {...register('teacherId')}
+              disabled={!teacherEnabled || teachersLoading}
+              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">Select teacher (optional)</option>
+              {teachersByLab.map((t) => (
+                <option key={t._id} value={t._id}>
+                  {t.name} ({t.short_abbr})
+                </option>
+              ))}
+            </select>
+            {labId && teachersByLab.length === 0 && !teachersLoading && (
+              <p className="text-amber-600 text-sm mt-1">No teachers available for this lab at this time slot. All teachers assigned to this lab are busy.</p>
+            )}
+            {errors.teacherId && (
+              <p className="text-red-500 text-sm mt-1">{errors.teacherId.message}</p>
+            )}
+          </div>
         )}
 
         <div className="flex justify-end gap-2 pt-2">

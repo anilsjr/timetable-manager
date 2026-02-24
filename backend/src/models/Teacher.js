@@ -6,6 +6,7 @@ const teacherSchema = new mongoose.Schema(
     short_abbr: { type: String, required: true },
     code: { type: String, unique: true, sparse: true },
     subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject' }],
+    labs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Lab' }],
     max_load_per_day: { type: Number },
   },
   { timestamps: true }

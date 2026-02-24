@@ -16,6 +16,16 @@ export const getTeachersBySubject = (subjectId, params = {}) => {
     .then((r) => r.data?.data ?? []);
 };
 
+export const getTeachersByLab = (labId, params = {}) => {
+  const query = {};
+  if (params.day) query.day = params.day;
+  if (params.startTime) query.startTime = params.startTime;
+  if (params.excludeScheduleId) query.excludeScheduleId = params.excludeScheduleId;
+  return api
+    .get(`/api/teachers/by-lab/${labId}`, { params: query })
+    .then((r) => r.data?.data ?? []);
+};
+
 export const createTeacher = (data) =>
   api.post('/api/teachers', data).then((r) => r.data);
 

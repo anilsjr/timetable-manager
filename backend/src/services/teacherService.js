@@ -39,14 +39,14 @@ export const listTeachers = async ({ page = 1, limit = 10, search = '' }) => {
     : {};
   const skip = (page - 1) * limit;
   const [data, total] = await Promise.all([
-    Teacher.find(query).populate('subjects', 'full_name short_name code').sort({ name: 1 }).skip(skip).limit(limit).lean(),
+    Teacher.find(query).populate('subjects', 'full_name short_name code').populate('labs', 'name short_name code').sort({ name: 1 }).skip(skip).limit(limit).lean(),
     Teacher.countDocuments(query),
   ]);
   return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
 export const getTeacherById = async (id) => {
-  const teacher = await Teacher.findById(id).populate('subjects', 'full_name short_name code');
+  const teacher = await Teacher.findById(id).populate('subjects', 'full_name short_name code').populate('labs', 'name short_name code');
   if (!teacher) throw new Error('Teacher not found');
   return teacher;
 };
@@ -55,6 +55,25 @@ export const getTeachersBySubject = async (subjectId, options = {}) => {
   const { day, startTime, excludeScheduleId } = options;
   let data = await Teacher.find({ subjects: subjectId })
     .populate('subjects', 'full_name short_name code')
+    .populate('labs', 'name short_name code')
+    .sort({ name: 1 })
+    .lean();
+
+  if (day && startTime) {
+    const busyIds = await getBusyTeacherIdsAtSlot(day, startTime, excludeScheduleId);
+    if (busyIds.length) {
+      data = data.filter((t) => !busyIds.includes(t._id.toString()));
+    }
+  }
+
+  return data;
+};
+
+export const getTeachersByLab = async (labId, options = {}) => {
+  const { day, startTime, excludeScheduleId } = options;
+  let data = await Teacher.find({ labs: labId })
+    .populate('subjects', 'full_name short_name code')
+    .populate('labs', 'name short_name code')
     .sort({ name: 1 })
     .lean();
 
@@ -73,7 +92,7 @@ export const updateTeacher = async (id, payload) => {
   const teacher = await Teacher.findByIdAndUpdate(id, payload, {
     new: true,
     runValidators: true,
-  }).populate('subjects', 'full_name short_name code');
+  }).populate('subjects', 'full_name short_name code').populate('labs', 'name short_name code');
   if (!teacher) throw new Error('Teacher not found');
   return teacher;
 };
