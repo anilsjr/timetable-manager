@@ -77,12 +77,13 @@ function renderCellContent(schedule) {
     (schedule.subject?.full_name ? shortNameFromFullName(schedule.subject.full_name) : null) ||
     '—';
   const teacherShortName = schedule.teacher?.short_abbr || schedule.teacher?.name || '';
+  const roomCode = schedule.roomModel === 'Room' && schedule.room?.code ? schedule.room.code : '';
 
   return {
     content: (
       <span className="block text-blue-900 pointer-events-none">
         <span className="font-semibold block">{subjectShortName} (L)</span>
-        <span className="text-xs text-blue-800/90">{teacherShortName}</span>
+        <span className="text-xs text-blue-800/90">{teacherShortName}{roomCode ? ` / ${roomCode}` : ''}</span>
       </span>
     ),
     cellClass: 'bg-blue-100 hover:bg-blue-200',

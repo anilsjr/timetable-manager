@@ -4,7 +4,7 @@ export const createLab = [
   body('name').trim().notEmpty().withMessage('Name is required'),
   body('short_name').trim().notEmpty().withMessage('Short name is required'),
   body('code').trim().notEmpty().withMessage('Code is required'),
-  body('room_number').optional().trim(),
+  body('room').optional().isMongoId().withMessage('Invalid room ID'),
   body('capacity').optional().isInt({ min: 0 }).withMessage('Capacity must be non-negative'),
 ];
 
@@ -13,7 +13,7 @@ export const updateLab = [
   body('name').optional().trim().notEmpty(),
   body('short_name').optional().trim().notEmpty(),
   body('code').optional().trim().notEmpty(),
-  body('room_number').optional().trim(),
+  body('room').optional().isMongoId().withMessage('Invalid room ID'),
   body('capacity').optional().isInt({ min: 0 }),
 ];
 

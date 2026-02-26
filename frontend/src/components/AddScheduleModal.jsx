@@ -8,6 +8,7 @@ import ConfirmDialog from './ConfirmDialog';
 import * as classApi from '../services/classApi';
 import * as scheduleApi from '../services/scheduleApi';
 import * as teacherApi from '../services/teacherApi';
+import * as roomApi from '../services/roomApi';
 import { DAYS, getDayLabel } from '../utils/dateHelpers';
 
 const schema = z
@@ -16,6 +17,7 @@ const schema = z
     subjectId: z.string(),
     teacherId: z.string(),
     labId: z.string(),
+    roomId: z.string().optional(),
     type: z.enum(['LECTURE', 'LAB']),
     day: z.enum(DAYS),
     startTime: z.string().min(1, 'Start time required'),
@@ -47,6 +49,7 @@ export default function AddScheduleModal({
   const [classLabs, setClassLabs] = useState([]);
   const [teachersBySubject, setTeachersBySubject] = useState([]);
   const [teachersByLab, setTeachersByLab] = useState([]);
+  const [roomList, setRoomList] = useState([]);
   const [subjectsLoading, setSubjectsLoading] = useState(false);
   const [labsLoading, setLabsLoading] = useState(false);
   const [teachersLoading, setTeachersLoading] = useState(false);
@@ -65,6 +68,7 @@ export default function AddScheduleModal({
       subjectId: '',
       teacherId: '',
       labId: '',
+      roomId: '',
       type: 'LECTURE',
       day: 'MON',
       startTime: '09:45',
@@ -111,6 +115,7 @@ export default function AddScheduleModal({
         subjectId: initialValues.subjectId ?? '',
         teacherId: initialValues.teacherId ?? '',
         labId: initialValues.labId ?? '',
+        roomId: initialValues.roomId ?? '',
         type: initialValues.type ?? 'LECTURE',
         day: initialValues.day ?? 'MON',
         startTime: initialValues.startTime ?? '09:45',
@@ -118,6 +123,15 @@ export default function AddScheduleModal({
       });
     }
   }, [open, initialValues, reset]);
+
+  // Load rooms when modal opens
+  useEffect(() => {
+    if (!open) return;
+    roomApi
+      .getRooms({ limit: 500 })
+      .then((res) => setRoomList(res.data || []))
+      .catch(() => setRoomList([]));
+  }, [open]);
 
   useEffect(() => {
     if (!classId || !isSubjectType) {
@@ -207,6 +221,13 @@ export default function AddScheduleModal({
     if (values.type === 'LECTURE' && values.subjectId && values.teacherId) {
       p.subjectId = values.subjectId;
       p.teacherId = values.teacherId;
+      if (values.roomId) {
+        p.room = values.roomId;
+        p.roomModel = 'Room';
+      } else {
+        p.room = null;
+        p.roomModel = null;
+      }
     }
     if (values.type === 'LAB' && values.labId) {
       p.labId = values.labId;
@@ -443,6 +464,23 @@ export default function AddScheduleModal({
               {errors.teacherId && (
                 <p className="text-red-500 text-sm mt-1">{errors.teacherId.message}</p>
               )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Room (Optional)</label>
+              <select
+                {...register('roomId')}
+                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">No room assigned</option>
+                {roomList
+                  .filter((room) => room.type === 'class')
+                  .map((room) => (
+                    <option key={room._id} value={room._id}>
+                      {room.name} ({room.code})
+                    </option>
+                  ))}
+              </select>
             </div>
           </>
         )}

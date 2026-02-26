@@ -14,6 +14,7 @@ export const listClasses = async ({ page = 1, limit = 10, search = '' }) => {
     ClassModel.find(query)
       .populate('subjects', 'code short_name full_name')
       .populate('labs', 'code short_name name')
+      .populate('room', 'name code type')
       .sort({ class_name: 1, year: 1, section: 1 })
       .skip(skip)
       .limit(limit)
@@ -22,11 +23,11 @@ export const listClasses = async ({ page = 1, limit = 10, search = '' }) => {
   ]);
   return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
-
 export const getClassById = async (id) => {
   const cls = await ClassModel.findById(id)
     .populate('subjects', 'code short_name full_name')
-    .populate('labs', 'code short_name name');
+    .populate('labs', 'code short_name name')
+    .populate('room', 'name code type');
   if (!cls) throw new Error('Class not found');
   return cls;
 };

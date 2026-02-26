@@ -96,6 +96,7 @@ export const listSchedules = async ({ page = 1, limit = 10, search = '', classId
       .populate('subject', 'full_name short_name code')
       .populate('lab', 'name short_name code')
       .populate('teacher', 'name short_abbr')
+      .populate('room', 'name code type')
       .sort({ day_of_week: 1, start_time: 1 })
       .skip(skip)
       .limit(limit)
@@ -111,7 +112,7 @@ export const getSchedulesByClass = async (classId) => {
     .populate('subject', 'full_name short_name code')
     .populate('lab', 'name short_name code')
     .populate('teacher', 'name short_abbr')
-    .populate('room', 'name short_name code room_number')
+    .populate('room', 'name code type')
     .sort({ day_of_week: 1, start_time: 1 })
     .lean();
   return data;
@@ -123,6 +124,7 @@ export const getScheduleById = async (id) => {
     .populate('subject', 'full_name short_name code')
     .populate('lab', 'name short_name code')
     .populate('teacher', 'name short_abbr')
+    .populate('room', 'name code type')
     .lean();
   if (!schedule) throw new Error('Schedule not found');
   return schedule;
@@ -148,6 +150,7 @@ export const createSchedule = async (payload) => {
     .populate('subject', 'full_name short_name code')
     .populate('lab', 'name short_name code')
     .populate('teacher', 'name short_abbr')
+    .populate('room', 'name code type')
     .lean();
 };
 
@@ -172,7 +175,8 @@ export const updateSchedule = async (id, payload) => {
     .populate('class', 'class_name year section code')
     .populate('subject', 'full_name short_name code')
     .populate('lab', 'name short_name code')
-    .populate('teacher', 'name short_abbr');
+    .populate('teacher', 'name short_abbr')
+    .populate('room', 'name code type');
   if (!schedule) throw new Error('Schedule not found');
   return schedule;
 };

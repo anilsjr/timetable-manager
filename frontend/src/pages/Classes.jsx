@@ -11,12 +11,14 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import * as classApi from '../services/classApi';
 import * as subjectApi from '../services/subjectApi';
 import * as labApi from '../services/labApi';
+import * as roomApi from '../services/roomApi';
 
 const schema = z.object({
   class_name: z.string().min(1, 'Class name required'),
   year: z.coerce.number().int().min(1, 'Year required'),
   section: z.enum(['1', '2', '3', '4'], { required_error: 'Section required' }),
   student_count: z.coerce.number().int().min(0).optional().default(0),
+  room: z.string().optional(),
   subjects: z.array(z.string()).optional().default([]),
   labs: z.array(z.string()).optional().default([]),
 });
@@ -26,6 +28,24 @@ const columns = [
   { key: 'year', label: 'Year', hideOnMobile: true },
   { key: 'section', label: 'Section', hideOnMobile: true },
   { key: 'code', label: 'Code' },
+  {
+    key: 'room',
+    label: 'Room',
+    hideOnMobile: true,
+    render: (val, row) => {
+      const room = row.room;
+      if (!room) return <span className="text-gray-400">—</span>;
+      return (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          room.type === 'class' 
+            ? 'bg-blue-100 text-blue-800' 
+            : 'bg-purple-100 text-purple-800'
+        }`} title={room.name}>
+          {room.code}
+        </span>
+      );
+    },
+  },
   {
     key: 'subjects',
     label: 'Subjects',
@@ -92,8 +112,10 @@ export default function Classes() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [subjectList, setSubjectList] = useState([]);
   const [labList, setLabList] = useState([]);
+  const [roomList, setRoomList] = useState([]);
   const [subjectSearch, setSubjectSearch] = useState('');
   const [labSearch, setLabSearch] = useState('');
+  const [roomSearch, setRoomSearch] = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -115,12 +137,14 @@ export default function Classes() {
   useEffect(() => {
     const loadOptions = async () => {
       try {
-        const [subRes, labRes] = await Promise.all([
+        const [subRes, labRes, roomRes] = await Promise.all([
           subjectApi.getSubjects({ limit: 500 }),
           labApi.getLabs({ limit: 500 }),
+          roomApi.getRooms({ limit: 500 }),
         ]);
         setSubjectList(subRes.data || []);
         setLabList(labRes.data || []);
+        setRoomList(roomRes.data || []);
       } catch {
         // non-blocking; modal will show empty lists
       }
@@ -142,7 +166,7 @@ export default function Classes() {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { class_name: '', year: 1, section: '1', student_count: 0, subjects: [], labs: [] },
+    defaultValues: { class_name: '', year: 1, section: '1', student_count: 0, room: '', subjects: [], labs: [] },
   });
 
   const selectedSubjectIds = watch('subjects') || [];
@@ -164,9 +188,10 @@ export default function Classes() {
 
   const openCreate = () => {
     setEditing(null);
-    reset({ class_name: '', year: 1, section: '1', student_count: 0, subjects: [], labs: [] });
+    reset({ class_name: '', year: 1, section: '1', student_count: 0, room: '', subjects: [], labs: [] });
     setSubjectSearch('');
     setLabSearch('');
+    setRoomSearch('');
     setModalOpen(true);
   };
 
@@ -174,16 +199,19 @@ export default function Classes() {
     setEditing(row);
     const subjectIds = (row.subjects || []).map((s) => (typeof s === 'object' ? s._id : s));
     const labIds = (row.labs || []).map((l) => (typeof l === 'object' ? l._id : l));
+    const roomId = row.room && typeof row.room === 'object' ? row.room._id : (row.room || '');
     reset({
       class_name: row.class_name,
       year: row.year,
       section: row.section,
       student_count: row.student_count ?? 0,
+      room: roomId,
       subjects: subjectIds,
       labs: labIds,
     });
     setSubjectSearch('');
     setLabSearch('');
+    setRoomSearch('');
     setModalOpen(true);
   };
 
@@ -304,6 +332,21 @@ export default function Classes() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Student Count</label>
               <input {...register('student_count')} type="number" min={0} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Room (Optional)</label>
+            <select {...register('room')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
+              <option value="">No room assigned</option>
+              {roomList
+                .filter((room) => room.type === 'class')
+                .map((room) => (
+                  <option key={room._id} value={room._id}>
+                    {room.name} ({room.code})
+                  </option>
+                ))}
+            </select>
+            {errors.room && <p className="text-red-500 text-sm mt-1">{errors.room.message}</p>}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

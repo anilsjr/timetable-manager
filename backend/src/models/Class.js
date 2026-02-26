@@ -9,6 +9,7 @@ const classSchema = new mongoose.Schema(
     section: { type: String, required: true, enum: SECTION_ENUM },
     code: { type: String, unique: true },
     student_count: { type: Number, default: 0 },
+    room: { type: mongoose.Schema.Types.ObjectId, ref: 'Room', default: null },
     subjects: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Subject', default: [] }],
     labs: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Lab', default: [] }],
   },

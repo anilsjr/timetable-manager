@@ -34,16 +34,15 @@ async function getClassTimetableData(classId) {
   }
 
   const schedules = await Schedule.find({ class: classId })
-    .populate('subject', 'subject_name subject_code code short_name')
-    .populate('teacher', 'first_name last_name name')
-    .populate('room', 'room_number lab_name name')
+    .populate('subject', 'full_name short_name code')
+    .populate('lab', 'name short_name code')
+    .populate('teacher', 'name short_abbr')
+    .populate('room', 'name short_name code type')
     .lean();
 
-  console.log('Raw schedules from DB:', JSON.stringify(schedules, null, 2));
-
-  // Create timetable grid
   const timetableGrid = {};
-  
+  const regularSlots = timeSlots.filter(s => s.start !== 'BREAK' && s.start !== 'LUNCH');
+
   days.forEach(day => {
     timetableGrid[day] = {};
     timeSlots.forEach(slot => {
@@ -55,68 +54,74 @@ async function getClassTimetableData(classId) {
     });
   });
 
-  // Fill in schedules
-  console.log('Processing schedules for class:', classId);
-  console.log('Found schedules:', schedules.length);
-  
   schedules.forEach(schedule => {
     const day = schedule.day_of_week;
-    // Convert date to time string (HH:MM format)
     let startTime = null;
     if (schedule.start_time) {
       if (typeof schedule.start_time === 'string') {
         startTime = schedule.start_time;
       } else {
-        // It's a Date object, convert it
         const date = new Date(schedule.start_time);
         const hours = String(date.getHours()).padStart(2, '0');
         const minutes = String(date.getMinutes()).padStart(2, '0');
         startTime = `${hours}:${minutes}`;
       }
     }
-    
-    console.log(`Schedule: Day=${day}, StartTime=${startTime}, Subject=${schedule.subject?.subject_name}, Teacher=${schedule.teacher?.first_name} ${schedule.teacher?.last_name}`);
-    
-    // Try exact match first
+
+    let matchedSlot = null;
     if (timetableGrid[day] && startTime && timetableGrid[day][startTime] !== undefined) {
-      timetableGrid[day][startTime] = {
-        subject: schedule.subject?.subject_name || schedule.subject?.short_name || schedule.subject?.code || 'N/A',
-        subjectCode: schedule.subject?.subject_code || schedule.subject?.code || '',
-        teacher: schedule.teacher ? 
-          (schedule.teacher.name || `${schedule.teacher.first_name || ''} ${schedule.teacher.last_name || ''}`.trim()) : 'N/A',
-        room: schedule.room?.room_number || schedule.room?.lab_name || schedule.room?.name || 'N/A',
-        type: schedule.type || 'LECTURE'
-      };
-      console.log(`Mapped to grid: ${day}[${startTime}]j`, timetableGrid[day][startTime]);
+      matchedSlot = startTime;
+    } else if (timetableGrid[day] && startTime) {
+      const availableSlots = Object.keys(timetableGrid[day]).filter(s => s !== 'BREAK' && s !== 'LUNCH');
+      matchedSlot = availableSlots.find(slot => {
+        const [slotH, slotM] = slot.split(':').map(Number);
+        const [schedH, schedM] = startTime.split(':').map(Number);
+        return Math.abs((slotH * 60 + slotM) - (schedH * 60 + schedM)) <= 5;
+      }) || null;
+    }
+
+    if (!matchedSlot || !timetableGrid[day]) return;
+
+    const isLab = schedule.type === 'LAB';
+    const labData = schedule.lab;
+    const roomData = schedule.room;
+
+    let subjectName, subjectCode, roomDisplay;
+    if (isLab) {
+      subjectName = labData?.name || roomData?.name || 'N/A';
+      subjectCode = labData?.code || roomData?.code || '';
+      roomDisplay = roomData?.code || roomData?.name || 'N/A';
     } else {
-      console.log(`No exact match for: Day=${day}, StartTime=${startTime} in timetable grid`);
-      console.log('Available time slots for day:', Object.keys(timetableGrid[day] || {}));
-      
-      // Try to find closest matching time slot
-      if (timetableGrid[day] && startTime) {
-        const availableSlots = Object.keys(timetableGrid[day]).filter(slot => slot !== 'BREAK' && slot !== 'LUNCH');
-        const closestSlot = availableSlots.find(slot => {
-          const [slotHour, slotMin] = slot.split(':').map(Number);
-          const [schedHour, schedMin] = startTime.split(':').map(Number);
-          return Math.abs((slotHour * 60 + slotMin) - (schedHour * 60 + schedMin)) <= 5; // 5 minute tolerance
-        });
-        
-        if (closestSlot && timetableGrid[day][closestSlot] === null) {
-          timetableGrid[day][closestSlot] = {
-            subject: schedule.subject?.subject_name || schedule.subject?.short_name || schedule.subject?.code || 'N/A',
-            subjectCode: schedule.subject?.subject_code || schedule.subject?.code || '',
-            teacher: schedule.teacher ? 
-              (schedule.teacher.name || `${schedule.teacher.first_name || ''} ${schedule.teacher.last_name || ''}`.trim()) : 'N/A',
-            room: schedule.room?.room_number || schedule.room?.lab_name || schedule.room?.name || 'N/A',
-            type: schedule.type || 'LECTURE'
-          };
-          console.log(`Mapped to closest slot: ${day}[${closestSlot}]`, timetableGrid[day][closestSlot]);
+      subjectName = schedule.subject?.short_name || schedule.subject?.full_name || 'N/A';
+      subjectCode = schedule.subject?.code || '';
+      roomDisplay = roomData?.code || 'N/A';
+    }
+
+    const teacherName = schedule.teacher?.name || 'N/A';
+    const teacherAbbr = schedule.teacher?.short_abbr || '';
+
+    const cellData = {
+      subject: subjectName,
+      subjectCode,
+      teacher: teacherName,
+      teacherAbbr,
+      room: roomDisplay,
+      type: schedule.type || 'LECTURE',
+      durationSlots: schedule.duration_slots || 1
+    };
+
+    timetableGrid[day][matchedSlot] = cellData;
+
+    if (isLab) {
+      const currentIdx = regularSlots.findIndex(s => s.start === matchedSlot);
+      if (currentIdx >= 0 && currentIdx + 1 < regularSlots.length) {
+        const nextSlotKey = regularSlots[currentIdx + 1].start;
+        if (timetableGrid[day][nextSlotKey] === null) {
+          timetableGrid[day][nextSlotKey] = { ...cellData, isLabContinuation: true };
         }
       }
     }
   });
-
-  console.log('Final timetable grid:', JSON.stringify(timetableGrid, null, 2));
 
   return {
     class: classData,
@@ -158,6 +163,14 @@ async function generateExcel(classData) {
         rowData.push('BREAK');
       } else if (cell && cell.type === 'LUNCH') {
         rowData.push('LUNCH');
+      } else if (cell && cell.isLabContinuation) {
+        rowData.push('↑ (cont.)');
+      } else if (cell && cell.type === 'LAB') {
+        const teacherDisplay = cell.teacherAbbr || cell.teacher;
+        const line = teacherDisplay && teacherDisplay !== 'N/A'
+          ? `${cell.subject} (${teacherDisplay})\n${cell.room}`
+          : `${cell.subject}\n${cell.room}`;
+        rowData.push(line);
       } else if (cell) {
         rowData.push(`${cell.subject}\n${cell.teacher}\n${cell.room}`);
       } else {
@@ -166,7 +179,6 @@ async function generateExcel(classData) {
     });
     const row = worksheet.addRow(rowData);
     
-    // Color code break and lunch
     rowData.forEach((cellValue, index) => {
       if (cellValue === 'BREAK') {
         row.getCell(index + 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFA500' } };
@@ -253,6 +265,17 @@ async function generatePDF(classData) {
       } else if (cell && cell.type === 'LUNCH') {
         doc.fillColor('#90EE90').rect(currentX, currentY, columnWidth, rowHeight).fill();
         doc.fillColor('#000000').text('LUNCH', currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
+      } else if (cell && cell.isLabContinuation) {
+        doc.fillColor('#000000');
+        doc.text('(cont.)', currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
+      } else if (cell && cell.type === 'LAB') {
+        doc.fillColor('#000000');
+        const teacherDisplay = cell.teacherAbbr || cell.teacher;
+        const labLine = teacherDisplay && teacherDisplay !== 'N/A'
+          ? `${cell.subject} (${teacherDisplay})`
+          : cell.subject;
+        const cellText = `${labLine}\n${cell.room}`;
+        doc.text(cellText, currentX + 5, currentY + 15, { width: columnWidth - 10, align: 'center' });
       } else if (cell) {
         doc.fillColor('#000000');
         const cellText = `${cell.subject}\n${cell.teacher}\n${cell.room}`;
@@ -300,39 +323,31 @@ function generateJSON(classData) {
         code: dayCode,
         name: dayLabels[dayCode]
       },
-      schedule: Object.entries(daySchedule).map(([timeSlot, scheduleData]) => {
-        if (scheduleData && scheduleData.type === 'BREAK') {
-          return {
-            timeSlot,
-            type: 'BREAK',
-            label: 'BREAK'
-          };
-        }
-        if (scheduleData && scheduleData.type === 'LUNCH') {
-          return {
-            timeSlot,
-            type: 'LUNCH',
-            label: 'LUNCH'
-          };
-        }
-        if (scheduleData && scheduleData.subject) {
-          return {
-            timeSlot,
-            type: scheduleData.type || 'LECTURE',
-            subject: {
-              name: scheduleData.subject,
-              code: scheduleData.subjectCode
-            },
-            teacher: scheduleData.teacher,
-            room: scheduleData.room
-          };
-        }
-        return {
-          timeSlot,
-          type: 'EMPTY',
-          label: 'No Class'
-        };
-      })
+      schedule: Object.entries(daySchedule)
+        .filter(([, data]) => !data?.isLabContinuation)
+        .map(([timeSlot, scheduleData]) => {
+          if (scheduleData && scheduleData.type === 'BREAK') {
+            return { timeSlot, type: 'BREAK', label: 'BREAK' };
+          }
+          if (scheduleData && scheduleData.type === 'LUNCH') {
+            return { timeSlot, type: 'LUNCH', label: 'LUNCH' };
+          }
+          if (scheduleData && scheduleData.subject) {
+            return {
+              timeSlot,
+              type: scheduleData.type || 'LECTURE',
+              subject: {
+                name: scheduleData.subject,
+                code: scheduleData.subjectCode
+              },
+              teacher: scheduleData.teacher,
+              teacherAbbr: scheduleData.teacherAbbr || '',
+              room: scheduleData.room,
+              durationSlots: scheduleData.durationSlots || 1
+            };
+          }
+          return { timeSlot, type: 'EMPTY', label: 'No Class' };
+        })
     }))
   };
 }
@@ -449,6 +464,14 @@ export async function exportBulkTimetables(req, res) {
               rowData.push('BREAK');
             } else if (cell && cell.type === 'LUNCH') {
               rowData.push('LUNCH');
+            } else if (cell && cell.isLabContinuation) {
+              rowData.push('↑ (cont.)');
+            } else if (cell && cell.type === 'LAB') {
+              const teacherDisplay = cell.teacherAbbr || cell.teacher;
+              const line = teacherDisplay && teacherDisplay !== 'N/A'
+                ? `${cell.subject} (${teacherDisplay})\n${cell.room}`
+                : `${cell.subject}\n${cell.room}`;
+              rowData.push(line);
             } else if (cell) {
               rowData.push(`${cell.subject}\n${cell.teacher}\n${cell.room}`);
             } else {
@@ -561,6 +584,17 @@ export async function exportBulkTimetables(req, res) {
             } else if (cell && cell.type === 'LUNCH') {
               doc.fillColor('#90EE90').rect(currentX, currentY, columnWidth, rowHeight).fill();
               doc.fillColor('#000000').text('LUNCH', currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
+            } else if (cell && cell.isLabContinuation) {
+              doc.fillColor('#000000');
+              doc.text('(cont.)', currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
+            } else if (cell && cell.type === 'LAB') {
+              doc.fillColor('#000000');
+              const teacherDisplay = cell.teacherAbbr || cell.teacher;
+              const labLine = teacherDisplay && teacherDisplay !== 'N/A'
+                ? `${cell.subject} (${teacherDisplay})`
+                : cell.subject;
+              const cellText = `${labLine}\n${cell.room}`;
+              doc.text(cellText, currentX + 5, currentY + 15, { width: columnWidth - 10, align: 'center' });
             } else if (cell) {
               doc.fillColor('#000000');
               const cellText = `${cell.subject}\n${cell.teacher}\n${cell.room}`;

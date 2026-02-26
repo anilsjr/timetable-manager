@@ -5,7 +5,7 @@ const labSchema = new mongoose.Schema(
     name: { type: String, required: true },
     short_name: { type: String, required: true },
     code: { type: String, required: true, unique: true },
-    room_number: { type: String },
+    room: { type: mongoose.Schema.Types.ObjectId, ref: 'Room', default: null },
     capacity: { type: Number, default: 0 },
   },
   { timestamps: true }

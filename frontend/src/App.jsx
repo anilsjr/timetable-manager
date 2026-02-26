@@ -8,6 +8,7 @@ import Subjects from './pages/Subjects';
 import Teachers from './pages/Teachers';
 import Classes from './pages/Classes';
 import Labs from './pages/Labs';
+import Rooms from './pages/Rooms';
 import Schedules from './pages/Schedules';
 import Import from './pages/Import';
 import ExportTimetables from './pages/ExportTimetables';
@@ -48,6 +49,7 @@ export default function App() {
         <Route path="teachers" element={<Teachers />} />
         <Route path="classes" element={<Classes />} />
         <Route path="labs" element={<Labs />} />
+        <Route path="rooms" element={<Rooms />} />
         <Route path="schedules" element={<Schedules />} />
         <Route path="import" element={<Import />} />
         <Route path="export" element={<ExportTimetables />} />

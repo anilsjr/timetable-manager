@@ -103,6 +103,7 @@ export default function Schedules() {
       classId: selectedClassId,
       subjectId: '',
       teacherId: '',
+      roomId: '',
       type: 'LECTURE',
       day,
       startTime: slot.start,
@@ -124,13 +125,17 @@ export default function Schedules() {
     const labId = sched.roomModel === 'Lab' && sched.room
       ? (typeof sched.room === 'object' ? sched.room._id : sched.room)
       : '';
-    console.log('Modal values:', { classId, subjectId, teacherId, labId, type: sched.type });
+    const roomId = sched.roomModel === 'Room' && sched.room
+      ? (typeof sched.room === 'object' ? sched.room._id : sched.room)
+      : '';
+    console.log('Modal values:', { classId, subjectId, teacherId, labId, roomId, type: sched.type });
     setEditing(sched);
     setModalInitial({
       classId,
       subjectId,
       teacherId,
       labId,
+      roomId,
       type: sched.type || 'LECTURE',
       day: sched.day_of_week || 'MON',
       startTime: sched.start_time ? formatTime(sched.start_time) : '09:45',

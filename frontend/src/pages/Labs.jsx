@@ -9,12 +9,13 @@ import SearchBar from '../components/SearchBar';
 import ModalForm from '../components/ModalForm';
 import ConfirmDialog from '../components/ConfirmDialog';
 import * as labApi from '../services/labApi';
+import * as roomApi from '../services/roomApi';
 
 const schema = z.object({
   name: z.string().min(1, 'Name required'),
   short_name: z.string().min(1, 'Short name required'),
   code: z.string().min(1, 'Code required'),
-  room_number: z.string().optional(),
+  room: z.string().optional(),
   capacity: z.coerce.number().int().min(0).optional().default(0),
 });
 
@@ -22,7 +23,23 @@ const columns = [
   { key: 'name', label: 'Name' },
   { key: 'short_name', label: 'Short Name', hideOnMobile: true },
   { key: 'code', label: 'Code', hideOnMobile: true },
-  { key: 'room_number', label: 'Room' },
+  {
+    key: 'room',
+    label: 'Room',
+    render: (val, row) => {
+      const room = row.room;
+      if (!room) return <span className="text-gray-400">—</span>;
+      return (
+        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          room.type === 'lab' 
+            ? 'bg-purple-100 text-purple-800' 
+            : 'bg-blue-100 text-blue-800'
+        }`} title={room.name}>
+          {room.code}
+        </span>
+      );
+    },
+  },
   { key: 'capacity', label: 'Capacity', hideOnMobile: true },
 ];
 
@@ -37,6 +54,7 @@ export default function Labs() {
   const [editing, setEditing] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [roomList, setRoomList] = useState([]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -55,6 +73,18 @@ export default function Labs() {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    const loadRooms = async () => {
+      try {
+        const res = await roomApi.getRooms({ limit: 500 });
+        setRoomList(res.data || []);
+      } catch {
+        // non-blocking
+      }
+    };
+    if (modalOpen) loadRooms();
+  }, [modalOpen]);
+
   const handleSearch = useCallback((val) => {
     setSearch(val);
     setPage(1);
@@ -67,22 +97,23 @@ export default function Labs() {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', short_name: '', code: '', room_number: '', capacity: 0 },
+    defaultValues: { name: '', short_name: '', code: '', room: '', capacity: 0 },
   });
 
   const openCreate = () => {
     setEditing(null);
-    reset({ name: '', short_name: '', code: '', room_number: '', capacity: 0 });
+    reset({ name: '', short_name: '', code: '', room: '', capacity: 0 });
     setModalOpen(true);
   };
 
   const openEdit = (row) => {
     setEditing(row);
+    const roomId = row.room && typeof row.room === 'object' ? row.room._id : (row.room || '');
     reset({
       name: row.name,
       short_name: row.short_name,
       code: row.code,
-      room_number: row.room_number || '',
+      room: roomId,
       capacity: row.capacity ?? 0,
     });
     setModalOpen(true);
@@ -184,8 +215,18 @@ export default function Labs() {
             {errors.code && <p className="text-red-500 text-sm mt-1">{errors.code.message}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
-            <input {...register('room_number')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Room (Optional)</label>
+            <select {...register('room')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
+              <option value="">No room assigned</option>
+              {roomList
+                .filter((room) => room.type === 'lab')
+                .map((room) => (
+                  <option key={room._id} value={room._id}>
+                    {room.name} ({room.code})
+                  </option>
+                ))}
+            </select>
+            {errors.room && <p className="text-red-500 text-sm mt-1">{errors.room.message}</p>}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>

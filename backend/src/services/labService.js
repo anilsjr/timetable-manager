@@ -7,20 +7,24 @@ export const listLabs = async ({ page = 1, limit = 10, search = '' }) => {
           { name: { $regex: search, $options: 'i' } },
           { short_name: { $regex: search, $options: 'i' } },
           { code: { $regex: search, $options: 'i' } },
-          { room_number: { $regex: search, $options: 'i' } },
         ],
       }
     : {};
   const skip = (page - 1) * limit;
   const [data, total] = await Promise.all([
-    Lab.find(query).sort({ code: 1 }).skip(skip).limit(limit).lean(),
+    Lab.find(query)
+      .populate('room', 'name code type')
+      .sort({ code: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
     Lab.countDocuments(query),
   ]);
   return { data, total, page, limit, totalPages: Math.ceil(total / limit) };
 };
 
 export const getLabById = async (id) => {
-  const lab = await Lab.findById(id);
+  const lab = await Lab.findById(id).populate('room', 'name code type');
   if (!lab) throw new Error('Lab not found');
   return lab;
 };
