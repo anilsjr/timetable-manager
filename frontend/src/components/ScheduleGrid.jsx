@@ -45,24 +45,35 @@ function renderCellContent(schedule) {
 
   if (isLab) {
     const room = schedule.room;
+    // Use lab document's short_name/code as label (populated via lab field)
+    const labDoc = schedule.lab;
     const labName =
+      labDoc?.short_name ||
+      labDoc?.code ||
       room?.short_name ||
-      room?.name ||
-      (room?.name ? shortNameFromFullName(room.name) : null) ||
       room?.code ||
       'Lab';
-    const teacherShortName = schedule.teacher?.short_abbr || schedule.teacher?.name || '';
-    const roomNo = room?.room_number || room?.code || room?.short_name || '—';
-    const singleLine = teacherShortName ? `${labName} (${teacherShortName}) / ${roomNo}` : `${labName} / ${roomNo}`;
+    const inchargeAbbr = schedule.teacher?.short_abbr || schedule.teacher?.name || '';
+    const assistantAbbr = schedule.lab_assistant?.short_abbr || schedule.lab_assistant?.name || '';
+    const roomNo = room?.room_number || room?.code || room?.short_name || '';
+
+    // Line 1: LabName (RoomNo) — omit room if not available
+    const line1 = roomNo ? `${labName} (${roomNo})` : labName;
+    // Line 2: Incharge / Assistant — omit assistant if not set
+    const line2 = inchargeAbbr
+      ? assistantAbbr
+        ? `${inchargeAbbr} / ${assistantAbbr}`
+        : inchargeAbbr
+      : '';
 
     return {
       content: (
         <div className="pointer-events-none">
           <span className="block font-semibold text-purple-900 text-sm leading-tight">
-            {singleLine}
+            {line1}
           </span>
           <span className="block text-xs text-purple-700 mt-0.5">
-            .
+            {line2 || '\u00A0'}
           </span>
         </div>
       ),

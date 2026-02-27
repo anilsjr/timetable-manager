@@ -120,6 +120,7 @@ export async function checkConflicts(payload, excludeId = null) {
     class: classId,
     subject: subjectId,
     teacher: teacherId,
+    lab_assistant: labAssistantId,
     room: roomId,
     roomModel,
     type,
@@ -188,7 +189,10 @@ export async function checkConflicts(payload, excludeId = null) {
   }
 
   if (teacherId) {
-    const teacherOverlaps = await Schedule.find({ ...query, teacher: teacherId }).lean();
+    const teacherOverlaps = await Schedule.find({
+      ...query,
+      $or: [{ teacher: teacherId }, { lab_assistant: teacherId }],
+    }).lean();
     for (const s of teacherOverlaps) {
       const sStart = timeToMinutes(s.start_time);
       const sEnd = timeToMinutes(s.end_time);
@@ -196,6 +200,32 @@ export async function checkConflicts(payload, excludeId = null) {
         return {
           type: 'TEACHER_CONFLICT',
           message: 'Teacher already assigned at this time',
+          conflict_id: s._id.toString(),
+        };
+      }
+    }
+  }
+
+  // Check lab assistant teacher conflicts (must not be busy at same time)
+  if (labAssistantId) {
+    if (teacherId && String(labAssistantId) === String(teacherId)) {
+      return {
+        type: 'TEACHER_CONFLICT',
+        message: 'Lab In-Charge and Lab Assistant cannot be the same teacher',
+        conflict_id: '',
+      };
+    }
+    const assistantOverlaps = await Schedule.find({
+      ...query,
+      $or: [{ teacher: labAssistantId }, { lab_assistant: labAssistantId }],
+    }).lean();
+    for (const s of assistantOverlaps) {
+      const sStart = timeToMinutes(s.start_time);
+      const sEnd = timeToMinutes(s.end_time);
+      if (minutesOverlap(startMin, endMin, sStart, sEnd)) {
+        return {
+          type: 'TEACHER_CONFLICT',
+          message: 'Lab Assistant already assigned at this time',
           conflict_id: s._id.toString(),
         };
       }

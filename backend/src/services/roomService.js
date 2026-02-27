@@ -4,7 +4,6 @@ export const listRooms = async ({ page = 1, limit = 10, search = '' }) => {
   const query = search
     ? {
         $or: [
-          { name: { $regex: search, $options: 'i' } },
           { code: { $regex: search, $options: 'i' } },
           { type: { $regex: search, $options: 'i' } },
         ],

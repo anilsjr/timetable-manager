@@ -40,7 +40,7 @@ const columns = [
           room.type === 'class' 
             ? 'bg-blue-100 text-blue-800' 
             : 'bg-purple-100 text-purple-800'
-        }`} title={room.name}>
+        }`} title={room.code}>
           {room.code}
         </span>
       );
@@ -342,7 +342,7 @@ export default function Classes() {
                 .filter((room) => room.type === 'class')
                 .map((room) => (
                   <option key={room._id} value={room._id}>
-                    {room.name} ({room.code})
+                    {room.code}
                   </option>
                 ))}
             </select>

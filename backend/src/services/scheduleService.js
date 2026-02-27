@@ -43,11 +43,14 @@ function normalizePayload(body) {
       typeof endTime === 'string' && endTime.length <= 5 ? toDate(day, endTime) : new Date(endTime);
   }
 
+  const labAssistantId = body.labAssistantId || body.lab_assistant;
+
   const normalized = {
     class: classId,
     subject: subjectId ?? null,
     lab: labId ?? null,
     teacher: teacherId ?? null,
+    lab_assistant: (type === 'LAB' && labAssistantId) ? labAssistantId : null,
     type: type,
     day_of_week: day,
     start_time,
@@ -96,6 +99,7 @@ export const listSchedules = async ({ page = 1, limit = 10, search = '', classId
       .populate('subject', 'full_name short_name code')
       .populate('lab', 'name short_name code')
       .populate('teacher', 'name short_abbr')
+      .populate('lab_assistant', 'name short_abbr')
       .populate('room', 'name code type')
       .sort({ day_of_week: 1, start_time: 1 })
       .skip(skip)
@@ -112,6 +116,7 @@ export const getSchedulesByClass = async (classId) => {
     .populate('subject', 'full_name short_name code')
     .populate('lab', 'name short_name code')
     .populate('teacher', 'name short_abbr')
+    .populate('lab_assistant', 'name short_abbr')
     .populate('room', 'name code type')
     .sort({ day_of_week: 1, start_time: 1 })
     .lean();
@@ -124,6 +129,7 @@ export const getScheduleById = async (id) => {
     .populate('subject', 'full_name short_name code')
     .populate('lab', 'name short_name code')
     .populate('teacher', 'name short_abbr')
+    .populate('lab_assistant', 'name short_abbr')
     .populate('room', 'name code type')
     .lean();
   if (!schedule) throw new Error('Schedule not found');
@@ -138,6 +144,9 @@ export const createSchedule = async (payload) => {
   if (normalized.teacher && normalized.lab) {
     await ensureTeacherCanTeachLab(normalized.teacher, normalized.lab);
   }
+  if (normalized.lab_assistant && normalized.lab) {
+    await ensureTeacherCanTeachLab(normalized.lab_assistant, normalized.lab);
+  }
   const conflict = await checkConflicts(normalized);
   if (conflict) {
     const err = new Error(conflict.message);
@@ -150,6 +159,7 @@ export const createSchedule = async (payload) => {
     .populate('subject', 'full_name short_name code')
     .populate('lab', 'name short_name code')
     .populate('teacher', 'name short_abbr')
+    .populate('lab_assistant', 'name short_abbr')
     .populate('room', 'name code type')
     .lean();
 };
@@ -161,6 +171,9 @@ export const updateSchedule = async (id, payload) => {
   }
   if (normalized.teacher && normalized.lab) {
     await ensureTeacherCanTeachLab(normalized.teacher, normalized.lab);
+  }
+  if (normalized.lab_assistant && normalized.lab) {
+    await ensureTeacherCanTeachLab(normalized.lab_assistant, normalized.lab);
   }
   const conflict = await checkConflicts(normalized, id);
   if (conflict) {
@@ -176,6 +189,7 @@ export const updateSchedule = async (id, payload) => {
     .populate('subject', 'full_name short_name code')
     .populate('lab', 'name short_name code')
     .populate('teacher', 'name short_abbr')
+    .populate('lab_assistant', 'name short_abbr')
     .populate('room', 'name code type');
   if (!schedule) throw new Error('Schedule not found');
   return schedule;

@@ -19,6 +19,8 @@ export const createSchedule = (data) => {
     endTime: data.endTime,
     type: data.type,
   };
+  if (data.labId) payload.labId = data.labId;
+  if (data.labAssistantId) payload.labAssistantId = data.labAssistantId;
   if (data.room != null) payload.room = data.room;
   if (data.roomModel != null) payload.roomModel = data.roomModel;
   return api.post('/api/schedules', payload).then((r) => r.data);
@@ -34,6 +36,8 @@ export const updateSchedule = (id, data) => {
     endTime: data.endTime,
     type: data.type,
   };
+  if (data.labId) payload.labId = data.labId;
+  if (data.labAssistantId) payload.labAssistantId = data.labAssistantId;
   if (data.room != null) payload.room = data.room;
   if (data.roomModel != null) payload.roomModel = data.roomModel;
   return api.put(`/api/schedules/${id}`, payload).then((r) => r.data);

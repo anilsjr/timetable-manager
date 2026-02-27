@@ -15,7 +15,7 @@ const schema = z.object({
   name: z.string().min(1, 'Name required'),
   short_name: z.string().min(1, 'Short name required'),
   code: z.string().min(1, 'Code required'),
-  room: z.string().optional(),
+  rooms: z.array(z.string()).optional().default([]),
   capacity: z.coerce.number().int().min(0).optional().default(0),
 });
 
@@ -24,19 +24,27 @@ const columns = [
   { key: 'short_name', label: 'Short Name', hideOnMobile: true },
   { key: 'code', label: 'Code', hideOnMobile: true },
   {
-    key: 'room',
-    label: 'Room',
+    key: 'rooms',
+    label: 'Rooms',
     render: (val, row) => {
-      const room = row.room;
-      if (!room) return <span className="text-gray-400">—</span>;
+      const rooms = row.rooms || [];
+      if (!rooms.length) return <span className="text-gray-400">—</span>;
       return (
-        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-          room.type === 'lab' 
-            ? 'bg-purple-100 text-purple-800' 
-            : 'bg-blue-100 text-blue-800'
-        }`} title={room.name}>
-          {room.code}
-        </span>
+        <div className="flex flex-wrap gap-1">
+          {rooms.map((room, i) => (
+            <span
+              key={room._id || i}
+              className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                room.type === 'lab'
+                  ? 'bg-purple-100 text-purple-800'
+                  : 'bg-blue-100 text-blue-800'
+              }`}
+              title={room.code}
+            >
+              {room.code}
+            </span>
+          ))}
+        </div>
       );
     },
   },
@@ -55,6 +63,7 @@ export default function Labs() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [roomList, setRoomList] = useState([]);
+  const [roomSearch, setRoomSearch] = useState('');
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -94,38 +103,43 @@ export default function Labs() {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', short_name: '', code: '', room: '', capacity: 0 },
+    defaultValues: { name: '', short_name: '', code: '', rooms: [], capacity: 0 },
   });
 
   const openCreate = () => {
     setEditing(null);
-    reset({ name: '', short_name: '', code: '', room: '', capacity: 0 });
+    reset({ name: '', short_name: '', code: '', rooms: [], capacity: 0 });
+    setRoomSearch('');
     setModalOpen(true);
   };
 
   const openEdit = (row) => {
     setEditing(row);
-    const roomId = row.room && typeof row.room === 'object' ? row.room._id : (row.room || '');
+    const roomIds = (row.rooms || []).map((r) => (typeof r === 'object' ? r._id : r));
     reset({
       name: row.name,
       short_name: row.short_name,
       code: row.code,
-      room: roomId,
+      rooms: roomIds,
       capacity: row.capacity ?? 0,
     });
+    setRoomSearch('');
     setModalOpen(true);
   };
 
   const onSubmit = async (values) => {
     try {
+      const payload = { ...values, rooms: values.rooms || [] };
       if (editing) {
-        await labApi.updateLab(editing._id, values);
+        await labApi.updateLab(editing._id, payload);
         toast.success('Lab updated');
       } else {
-        await labApi.createLab(values);
+        await labApi.createLab(payload);
         toast.success('Lab created');
       }
       setModalOpen(false);
@@ -215,18 +229,77 @@ export default function Labs() {
             {errors.code && <p className="text-red-500 text-sm mt-1">{errors.code.message}</p>}
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Room (Optional)</label>
-            <select {...register('room')} className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500">
-              <option value="">No room assigned</option>
-              {roomList
-                .filter((room) => room.type === 'lab')
-                .map((room) => (
-                  <option key={room._id} value={room._id}>
-                    {room.name} ({room.code})
-                  </option>
-                ))}
-            </select>
-            {errors.room && <p className="text-red-500 text-sm mt-1">{errors.room.message}</p>}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Rooms (Optional)</label>
+            <p className="text-xs text-gray-500 mb-2">Select one or more rooms for this lab</p>
+            {roomList.length > 0 && (
+              <div className="relative mb-2">
+                <input
+                  type="text"
+                  placeholder="Search rooms..."
+                  value={roomSearch}
+                  onChange={(e) => setRoomSearch(e.target.value)}
+                  className="w-full px-3 py-2 pr-8 border rounded focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+                {roomSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setRoomSearch('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="border rounded p-3 max-h-48 overflow-y-auto bg-gray-50 space-y-2">
+              {roomList.length === 0 ? (
+                <p className="text-sm text-gray-500">No rooms available. Add rooms first.</p>
+              ) : (
+                (() => {
+                  const labRooms = roomList.filter((r) => r.type === 'lab');
+                  const filteredRooms = labRooms.filter((r) => {
+                    if (!roomSearch.trim()) return true;
+                    const q = roomSearch.toLowerCase();
+                    return (
+                      r.name?.toLowerCase().includes(q) ||
+                      r.code?.toLowerCase().includes(q)
+                    );
+                  });
+                  if (labRooms.length === 0) {
+                    return <p className="text-sm text-gray-500">No lab-type rooms available.</p>;
+                  }
+                  if (filteredRooms.length === 0) {
+                    return <p className="text-sm text-gray-500">No rooms found matching "{roomSearch}"</p>;
+                  }
+                  return filteredRooms.map((r) => {
+                    const selected = (watch('rooms') || []).includes(r._id);
+                    return (
+                      <label
+                        key={r._id}
+                        className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 rounded px-2 py-1.5 -mx-2"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={(e) => {
+                            const current = watch('rooms') || [];
+                            if (e.target.checked) {
+                              setValue('rooms', [...current, r._id]);
+                            } else {
+                              setValue('rooms', current.filter((id) => id !== r._id));
+                            }
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                        <span className="text-sm">{r.code}</span>
+                      </label>
+                    );
+                  });
+                })()
+              )}
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Capacity</label>

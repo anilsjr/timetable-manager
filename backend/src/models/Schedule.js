@@ -9,6 +9,7 @@ const scheduleSchema = new mongoose.Schema(
     subject: { type: mongoose.Schema.Types.ObjectId, ref: 'Subject', default: null },
     lab: { type: mongoose.Schema.Types.ObjectId, ref: 'Lab', default: null },
     teacher: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
+    lab_assistant: { type: mongoose.Schema.Types.ObjectId, ref: 'Teacher', default: null },
     room: { type: mongoose.Schema.Types.ObjectId, refPath: 'roomModel', default: null },
     roomModel: { type: String, enum: ['Room', 'Lab'], default: null },
     type: { type: String, enum: TYPE_ENUM, required: true },

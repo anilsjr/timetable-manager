@@ -9,6 +9,7 @@ import * as classApi from '../services/classApi';
 import * as scheduleApi from '../services/scheduleApi';
 import * as teacherApi from '../services/teacherApi';
 import * as roomApi from '../services/roomApi';
+import * as labApi from '../services/labApi';
 import { DAYS, getDayLabel } from '../utils/dateHelpers';
 
 const schema = z
@@ -16,6 +17,7 @@ const schema = z
     classId: z.string().min(1, 'Class required'),
     subjectId: z.string(),
     teacherId: z.string(),
+    labAssistantId: z.string().optional(),
     labId: z.string(),
     roomId: z.string().optional(),
     type: z.enum(['LECTURE', 'LAB']),
@@ -34,7 +36,18 @@ const schema = z
   .refine((data) => data.type !== 'LAB' || (data.labId && data.labId.length > 0), {
     message: 'Lab required',
     path: ['labId'],
-  });
+  })
+  .refine(
+    (data) =>
+      data.type !== 'LAB' ||
+      !data.labAssistantId ||
+      !data.teacherId ||
+      data.labAssistantId !== data.teacherId,
+    {
+      message: 'Lab Assistant cannot be the same as Lab In-Charge',
+      path: ['labAssistantId'],
+    }
+  );
 
 export default function AddScheduleModal({
   open,
@@ -49,10 +62,13 @@ export default function AddScheduleModal({
   const [classLabs, setClassLabs] = useState([]);
   const [teachersBySubject, setTeachersBySubject] = useState([]);
   const [teachersByLab, setTeachersByLab] = useState([]);
+  const [teachersByLabAssistant, setTeachersByLabAssistant] = useState([]);
   const [roomList, setRoomList] = useState([]);
+  const [labRooms, setLabRooms] = useState([]);
   const [subjectsLoading, setSubjectsLoading] = useState(false);
   const [labsLoading, setLabsLoading] = useState(false);
   const [teachersLoading, setTeachersLoading] = useState(false);
+  const [assistantLoading, setAssistantLoading] = useState(false);
 
   const {
     register,
@@ -67,6 +83,7 @@ export default function AddScheduleModal({
       classId: '',
       subjectId: '',
       teacherId: '',
+      labAssistantId: '',
       labId: '',
       roomId: '',
       type: 'LECTURE',
@@ -82,12 +99,14 @@ export default function AddScheduleModal({
   const labId = watch('labId');
   const day = watch('day');
   const startTime = watch('startTime');
+  const inchargeId = watch('teacherId');
 
   const isSubjectType = type === 'LECTURE';
   const isLabType = type === 'LAB';
   const subjectEnabled = isSubjectType;
   const labEnabled = isLabType;
   const teacherEnabled = (isSubjectType && !!subjectId) || (isLabType && !!labId);
+  const assistantEnabled = isLabType && !!labId && !!inchargeId;
   const currentClassId = watch('classId');
   const displayClasses = currentClassId
     ? classes.filter((c) => c._id === currentClassId)
@@ -114,6 +133,7 @@ export default function AddScheduleModal({
         classId: initialValues.classId ?? '',
         subjectId: initialValues.subjectId ?? '',
         teacherId: initialValues.teacherId ?? '',
+        labAssistantId: initialValues.labAssistantId ?? '',
         labId: initialValues.labId ?? '',
         roomId: initialValues.roomId ?? '',
         type: initialValues.type ?? 'LECTURE',
@@ -132,6 +152,22 @@ export default function AddScheduleModal({
       .then((res) => setRoomList(res.data || []))
       .catch(() => setRoomList([]));
   }, [open]);
+
+  // Load rooms for the selected lab
+  useEffect(() => {
+    if (!labId || !isLabType) {
+      setLabRooms([]);
+      setValue('roomId', '');
+      return;
+    }
+    labApi
+      .getLabById(labId)
+      .then((res) => {
+        const rooms = res.data?.rooms || [];
+        setLabRooms(rooms);
+      })
+      .catch(() => setLabRooms([]));
+  }, [labId, isLabType, setValue]);
 
   useEffect(() => {
     if (!classId || !isSubjectType) {
@@ -191,7 +227,11 @@ export default function AddScheduleModal({
   useEffect(() => {
     if (!labId || !teacherEnabled || !isLabType) {
       setTeachersByLab([]);
-      if (isLabType) setValue('teacherId', '');
+      setTeachersByLabAssistant([]);
+      if (isLabType) {
+        setValue('teacherId', '');
+        setValue('labAssistantId', '');
+      }
       return;
     }
     setTeachersLoading(true);
@@ -206,6 +246,26 @@ export default function AddScheduleModal({
       })
       .finally(() => setTeachersLoading(false));
   }, [labId, teacherEnabled, isLabType, day, startTime, editing, setValue]);
+
+  // Load lab assistant options (all lab teachers minus the selected in-charge)
+  useEffect(() => {
+    if (!assistantEnabled || !labId) {
+      setTeachersByLabAssistant([]);
+      setValue('labAssistantId', '');
+      return;
+    }
+    setAssistantLoading(true);
+    const params = { day, startTime };
+    if (editing?._id) params.excludeScheduleId = editing._id;
+    teacherApi
+      .getTeachersByLab(labId, params)
+      .then((list) => {
+        const filtered = (Array.isArray(list) ? list : []).filter((t) => t._id !== inchargeId);
+        setTeachersByLabAssistant(filtered);
+      })
+      .catch(() => setTeachersByLabAssistant([]))
+      .finally(() => setAssistantLoading(false));
+  }, [labId, assistantEnabled, inchargeId, day, startTime, editing, setValue]);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -231,10 +291,19 @@ export default function AddScheduleModal({
     }
     if (values.type === 'LAB' && values.labId) {
       p.labId = values.labId;
-      p.room = values.labId;
-      p.roomModel = 'Lab';
+      if (values.roomId) {
+        p.room = values.roomId;
+        p.roomModel = 'Room';
+      } else {
+        // Fallback: use the lab itself as room reference (legacy behaviour)
+        p.room = values.labId;
+        p.roomModel = 'Lab';
+      }
       if (values.teacherId) {
         p.teacherId = values.teacherId;
+      }
+      if (values.labAssistantId) {
+        p.labAssistantId = values.labAssistantId;
       }
     }
     return p;
@@ -423,6 +492,24 @@ export default function AddScheduleModal({
           </div>
         )}
 
+        {isLabType && labId && labRooms.length > 0 && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Room (Optional)</label>
+            <p className="text-xs text-gray-500 mb-1">Select a specific room for this lab session</p>
+            <select
+              {...register('roomId')}
+              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">No specific room</option>
+              {labRooms.map((room) => (
+                <option key={room._id || room} value={room._id || room}>
+                  {room.code || room}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {isSubjectType && (
           <>
             <div>
@@ -477,7 +564,7 @@ export default function AddScheduleModal({
                   .filter((room) => room.type === 'class')
                   .map((room) => (
                     <option key={room._id} value={room._id}>
-                      {room.name} ({room.code})
+                      {room.code}
                     </option>
                   ))}
               </select>
@@ -486,26 +573,57 @@ export default function AddScheduleModal({
         )}
 
         {isLabType && (
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Lab Teacher</label>
-            <select
-              {...register('teacherId')}
-              disabled={!teacherEnabled || teachersLoading}
-              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-            >
-              <option value="">Select teacher (optional)</option>
-              {teachersByLab.map((t) => (
-                <option key={t._id} value={t._id}>
-                  {t.name} ({t.short_abbr})
-                </option>
-              ))}
-            </select>
-            {labId && teachersByLab.length === 0 && !teachersLoading && (
-              <p className="text-amber-600 text-sm mt-1">No teachers available for this lab at this time slot. All teachers assigned to this lab are busy.</p>
-            )}
-            {errors.teacherId && (
-              <p className="text-red-500 text-sm mt-1">{errors.teacherId.message}</p>
-            )}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Lab In-Charge <span className="text-red-500">*</span>
+              </label>
+              <select
+                {...register('teacherId')}
+                disabled={!teacherEnabled || teachersLoading}
+                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="">Select In-Charge</option>
+                {teachersByLab.map((t) => (
+                  <option key={t._id} value={t._id}>
+                    {t.name} ({t.short_abbr})
+                  </option>
+                ))}
+              </select>
+              {labId && teachersByLab.length === 0 && !teachersLoading && (
+                <p className="text-amber-600 text-sm mt-1">No teachers available for this lab at this time slot.</p>
+              )}
+              {errors.teacherId && (
+                <p className="text-red-500 text-sm mt-1">{errors.teacherId.message}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Lab Assistant <span className="text-gray-400 text-xs">(optional)</span>
+              </label>
+              <select
+                {...register('labAssistantId')}
+                disabled={!assistantEnabled || assistantLoading}
+                className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              >
+                <option value="">Select Assistant (optional)</option>
+                {teachersByLabAssistant.map((t) => (
+                  <option key={t._id} value={t._id}>
+                    {t.name} ({t.short_abbr})
+                  </option>
+                ))}
+              </select>
+              {!inchargeId && labId && (
+                <p className="text-gray-500 text-xs mt-1">Select Lab In-Charge first to enable this field.</p>
+              )}
+              {assistantEnabled && teachersByLabAssistant.length === 0 && !assistantLoading && (
+                <p className="text-amber-600 text-sm mt-1">No other available teachers for assistant at this time slot.</p>
+              )}
+              {errors.labAssistantId && (
+                <p className="text-red-500 text-sm mt-1">{errors.labAssistantId.message}</p>
+              )}
+            </div>
           </div>
         )}
 

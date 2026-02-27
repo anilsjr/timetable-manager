@@ -13,7 +13,7 @@ export const listLabs = async ({ page = 1, limit = 10, search = '' }) => {
   const skip = (page - 1) * limit;
   const [data, total] = await Promise.all([
     Lab.find(query)
-      .populate('room', 'name code type')
+      .populate('rooms', 'name code type')
       .sort({ code: 1 })
       .skip(skip)
       .limit(limit)
@@ -24,7 +24,7 @@ export const listLabs = async ({ page = 1, limit = 10, search = '' }) => {
 };
 
 export const getLabById = async (id) => {
-  const lab = await Lab.findById(id).populate('room', 'name code type');
+  const lab = await Lab.findById(id).populate('rooms', 'name code type');
   if (!lab) throw new Error('Lab not found');
   return lab;
 };

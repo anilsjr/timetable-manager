@@ -36,7 +36,8 @@ export async function getClassTimetableData(classId) {
     .populate('subject', 'full_name short_name code')
     .populate('lab', 'name short_name code')
     .populate('teacher', 'name short_abbr')
-    .populate('room', 'name short_name code type')
+    .populate('lab_assistant', 'name short_abbr')
+    .populate('room', 'code type')
     .lean();
 
   const timetableGrid = {};
@@ -87,9 +88,9 @@ export async function getClassTimetableData(classId) {
 
     let subjectName, subjectCode, roomDisplay;
     if (isLab) {
-      subjectName = labData?.short_name || labData?.name || roomData?.short_name || roomData?.name || 'N/A';
+      subjectName = labData?.short_name || labData?.name || 'N/A';
       subjectCode = labData?.code || roomData?.code || '';
-      roomDisplay = roomData?.code || roomData?.name || 'N/A';
+      roomDisplay = roomData?.code || 'N/A';
     } else {
       subjectName = schedule.subject?.short_name || schedule.subject?.full_name || 'N/A';
       subjectCode = schedule.subject?.code || '';
@@ -98,12 +99,16 @@ export async function getClassTimetableData(classId) {
 
     const teacherName = schedule.teacher?.name || 'N/A';
     const teacherAbbr = schedule.teacher?.short_abbr || '';
+    const assistantName = schedule.lab_assistant?.name || '';
+    const assistantAbbr = schedule.lab_assistant?.short_abbr || '';
 
     const cellData = {
       subject: subjectName,
       subjectCode,
       teacher: teacherName,
       teacherAbbr,
+      assistantName,
+      assistantAbbr,
       room: roomDisplay,
       type: schedule.type || 'LECTURE',
       durationSlots: schedule.duration_slots || 1

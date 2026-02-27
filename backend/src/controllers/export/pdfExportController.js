@@ -122,11 +122,15 @@ function renderPDFPage(doc, classData) {
 
       if (isLab) {
         doc.fillColor('#000000');
-        const teacherDisplay = cell.teacherAbbr || cell.teacher;
-        const labLine = teacherDisplay && teacherDisplay !== 'N/A'
-          ? `${cell.subject} (${teacherDisplay})`
-          : cell.subject;
-        const cellText = `${labLine}\n${cell.room}`;
+        const inchargeAbbr = cell.teacherAbbr || cell.teacher;
+        const assistantAbbr = cell.assistantAbbr || '';
+        const roomPart = cell.room && cell.room !== 'N/A' ? ` (${cell.room})` : '';
+        const subjectLine = `${cell.subject}${roomPart}`;
+        let teacherLine = '';
+        if (inchargeAbbr && inchargeAbbr !== 'N/A') {
+          teacherLine = assistantAbbr ? `${inchargeAbbr} / ${assistantAbbr}` : inchargeAbbr;
+        }
+        const cellText = teacherLine ? `${subjectLine}\n${teacherLine}` : subjectLine;
         doc.text(cellText, currentX + 5, currentY + 15, { width: cellWidth - 10, align: 'center' });
       } else if (cell) {
         doc.fillColor('#000000');

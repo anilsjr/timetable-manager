@@ -122,18 +122,24 @@ export default function Schedules() {
     const teacherId = sched.teacher
       ? (typeof sched.teacher === 'object' ? sched.teacher._id : sched.teacher)
       : '';
-    const labId = sched.roomModel === 'Lab' && sched.room
-      ? (typeof sched.room === 'object' ? sched.room._id : sched.room)
+    const labAssistantId = sched.lab_assistant
+      ? (typeof sched.lab_assistant === 'object' ? sched.lab_assistant._id : sched.lab_assistant)
       : '';
+    const labId = sched.lab
+      ? (typeof sched.lab === 'object' ? sched.lab._id : sched.lab)
+      : sched.roomModel === 'Lab' && sched.room
+        ? (typeof sched.room === 'object' ? sched.room._id : sched.room)
+        : '';
     const roomId = sched.roomModel === 'Room' && sched.room
       ? (typeof sched.room === 'object' ? sched.room._id : sched.room)
       : '';
-    console.log('Modal values:', { classId, subjectId, teacherId, labId, roomId, type: sched.type });
+    console.log('Modal values:', { classId, subjectId, teacherId, labAssistantId, labId, roomId, type: sched.type });
     setEditing(sched);
     setModalInitial({
       classId,
       subjectId,
       teacherId,
+      labAssistantId,
       labId,
       roomId,
       type: sched.type || 'LECTURE',

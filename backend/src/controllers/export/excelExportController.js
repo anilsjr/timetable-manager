@@ -57,11 +57,15 @@ export async function generateExcel(classData) {
       } else if (cell && cell.isLabContinuation) {
         rowData.push(""); // Empty - will be merged with lab cell
       } else if (cell && cell.type === "LAB") {
-        const teacherDisplay = cell.teacherAbbr || cell.teacher;
-        const line =
-          teacherDisplay && teacherDisplay !== "N/A"
-            ? `${cell.subject} (${teacherDisplay})\n${cell.room}`
-            : `${cell.subject}\n${cell.room}`;
+        const inchargeAbbr = cell.teacherAbbr || cell.teacher;
+        const assistantAbbr = cell.assistantAbbr || '';
+        const roomPart = cell.room && cell.room !== 'N/A' ? ` (${cell.room})` : '';
+        const subjectLine = `${cell.subject}${roomPart}`;
+        let teacherLine = '';
+        if (inchargeAbbr && inchargeAbbr !== 'N/A') {
+          teacherLine = assistantAbbr ? `${inchargeAbbr} / ${assistantAbbr}` : inchargeAbbr;
+        }
+        const line = teacherLine ? `${subjectLine}\n${teacherLine}` : subjectLine;
         rowData.push(line);
         labMerges.push(colIndex);
       } else if (cell) {
@@ -193,11 +197,15 @@ export function populateExcelSheet(worksheet, classData) {
       } else if (cell && cell.isLabContinuation) {
         rowData.push("");
       } else if (cell && cell.type === "LAB") {
-        const teacherDisplay = cell.teacherAbbr || cell.teacher;
-        const line =
-          teacherDisplay && teacherDisplay !== "N/A"
-            ? `${cell.subject} (${teacherDisplay})\n${cell.room}`
-            : `${cell.subject}\n${cell.room}`;
+        const inchargeAbbr = cell.teacherAbbr || cell.teacher;
+        const assistantAbbr = cell.assistantAbbr || '';
+        const roomPart = cell.room && cell.room !== 'N/A' ? ` (${cell.room})` : '';
+        const subjectLine = `${cell.subject}${roomPart}`;
+        let teacherLine = '';
+        if (inchargeAbbr && inchargeAbbr !== 'N/A') {
+          teacherLine = assistantAbbr ? `${inchargeAbbr} / ${assistantAbbr}` : inchargeAbbr;
+        }
+        const line = teacherLine ? `${subjectLine}\n${teacherLine}` : subjectLine;
         rowData.push(line);
         labMerges.push(colIndex);
       } else if (cell) {

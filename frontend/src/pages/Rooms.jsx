@@ -11,14 +11,12 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import * as roomApi from '../services/roomApi';
 
 const schema = z.object({
-  name: z.string().min(1, 'Name required'),
   code: z.string().min(1, 'Code required'),
   type: z.enum(['class', 'lab'], { required_error: 'Type required' }),
   capacity: z.coerce.number().int().min(1, 'Capacity must be at least 1'),
 });
 
 const columns = [
-  { key: 'name', label: 'Name' },
   { key: 'code', label: 'Code' },
   {
     key: 'type',
@@ -77,19 +75,18 @@ export default function Rooms() {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', code: '', type: 'class', capacity: 30 },
+    defaultValues: { code: '', type: 'class', capacity: 30 },
   });
 
   const openCreate = () => {
     setEditing(null);
-    reset({ name: '', code: '', type: 'class', capacity: 30 });
+    reset({ code: '', type: 'class', capacity: 30 });
     setModalOpen(true);
   };
 
   const openEdit = (row) => {
     setEditing(row);
     reset({
-      name: row.name,
       code: row.code,
       type: row.type,
       capacity: row.capacity ?? 30,
@@ -181,16 +178,6 @@ export default function Rooms() {
         title={editing ? 'Edit Room' : 'Add Room'}
       >
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Room Name</label>
-            <input 
-              {...register('name')} 
-              className="w-full px-3 py-2 border rounded focus:ring-2 focus:ring-blue-500" 
-              placeholder="e.g. Computer Lab 1" 
-            />
-            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
-          </div>
-          
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Room Code</label>
@@ -249,7 +236,7 @@ export default function Rooms() {
       <ConfirmDialog
         open={!!deleteTarget}
         title="Delete Room"
-        message={deleteTarget ? `Are you sure you want to delete "${deleteTarget.name}"?` : ''}
+        message={deleteTarget ? `Are you sure you want to delete room "${deleteTarget.code}"?` : ''}
         loading={deleteLoading}
         onConfirm={handleDelete}
         onCancel={() => setDeleteTarget(null)}
