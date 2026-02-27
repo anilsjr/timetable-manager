@@ -112,7 +112,8 @@ export function generateJSON(classData) {
       code: classData.class.code,
       name: classData.class.class_name,
       year: classData.class.year,
-      section: classData.class.section
+      section: classData.class.section,
+      room: classData.class.room?.code || null
     },
     teachers,
     subjects,

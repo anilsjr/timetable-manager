@@ -11,17 +11,40 @@ export async function generateExcel(classData) {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Timetable");
 
+  // Compute total columns and class room code visibility
+  const totalCols = timeSlots.length + 1; // Day column + all time slots
+  const lastColLetter = String.fromCharCode(64 + totalCols);
+  const secondLastColLetter = String.fromCharCode(64 + totalCols - 1);
+  const classRoomCode = classData.class.room?.code || null;
+  const showClassRoom = classRoomCode
+    ? Object.values(classData.timetable).some(daySchedule =>
+        Object.values(daySchedule).some(cell =>
+          cell && !cell.isLabContinuation && cell.room && cell.room !== 'N/A' && cell.room !== classRoomCode
+        )
+      )
+    : false;
+
   // Add header
-  worksheet.mergeCells("A1:J1");
+  worksheet.mergeCells(`A1:${lastColLetter}1`);
   worksheet.getCell("A1").value = "IPS Academy Timetable Management";
   worksheet.getCell("A1").font = { bold: true, size: 16 };
   worksheet.getCell("A1").alignment = { horizontal: "center" };
 
-  worksheet.mergeCells("A2:J2");
-  worksheet.getCell("A2").value =
-    `Class: ${classData.class.code || `${classData.class.class_name}-${classData.class.year}${classData.class.section}`}`;
-  worksheet.getCell("A2").font = { bold: true, size: 14 };
-  worksheet.getCell("A2").alignment = { horizontal: "center" };
+  const classLabel = `Class: ${classData.class.code || `${classData.class.class_name}-${classData.class.year}${classData.class.section}`}`;
+  if (showClassRoom) {
+    worksheet.mergeCells(`A2:${secondLastColLetter}2`);
+    worksheet.getCell("A2").value = classLabel;
+    worksheet.getCell("A2").font = { bold: true, size: 14 };
+    worksheet.getCell("A2").alignment = { horizontal: "center" };
+    worksheet.getCell(`${lastColLetter}2`).value = `Room: ${classRoomCode}`;
+    worksheet.getCell(`${lastColLetter}2`).font = { bold: true, size: 12 };
+    worksheet.getCell(`${lastColLetter}2`).alignment = { horizontal: "right", vertical: "middle" };
+  } else {
+    worksheet.mergeCells(`A2:${lastColLetter}2`);
+    worksheet.getCell("A2").value = classLabel;
+    worksheet.getCell("A2").font = { bold: true, size: 14 };
+    worksheet.getCell("A2").alignment = { horizontal: "center" };
+  }
 
   // Add empty row
   worksheet.addRow([]);
@@ -153,16 +176,38 @@ export async function generateExcel(classData) {
 // Helper to populate a worksheet for bulk export (same layout as single)
 export function populateExcelSheet(worksheet, classData) {
   // Add header for this sheet
-  worksheet.mergeCells("A1:J1");
+  const totalCols = timeSlots.length + 1;
+  const lastColLetter = String.fromCharCode(64 + totalCols);
+  const secondLastColLetter = String.fromCharCode(64 + totalCols - 1);
+  const classRoomCode = classData.class.room?.code || null;
+  const showClassRoom = classRoomCode
+    ? Object.values(classData.timetable).some(daySchedule =>
+        Object.values(daySchedule).some(cell =>
+          cell && !cell.isLabContinuation && cell.room && cell.room !== 'N/A' && cell.room !== classRoomCode
+        )
+      )
+    : false;
+
+  worksheet.mergeCells(`A1:${lastColLetter}1`);
   worksheet.getCell("A1").value = "IPS Academy Timetable Management";
   worksheet.getCell("A1").font = { bold: true, size: 16 };
   worksheet.getCell("A1").alignment = { horizontal: "center" };
 
-  worksheet.mergeCells("A2:J2");
-  worksheet.getCell("A2").value =
-    `Class: ${classData.class.code || `${classData.class.class_name}-${classData.class.year}${classData.class.section}`}`;
-  worksheet.getCell("A2").font = { bold: true, size: 14 };
-  worksheet.getCell("A2").alignment = { horizontal: "center" };
+  const classLabel = `Class: ${classData.class.code || `${classData.class.class_name}-${classData.class.year}${classData.class.section}`}`;
+  if (showClassRoom) {
+    worksheet.mergeCells(`A2:${secondLastColLetter}2`);
+    worksheet.getCell("A2").value = classLabel;
+    worksheet.getCell("A2").font = { bold: true, size: 14 };
+    worksheet.getCell("A2").alignment = { horizontal: "center" };
+    worksheet.getCell(`${lastColLetter}2`).value = `Room: ${classRoomCode}`;
+    worksheet.getCell(`${lastColLetter}2`).font = { bold: true, size: 12 };
+    worksheet.getCell(`${lastColLetter}2`).alignment = { horizontal: "right", vertical: "middle" };
+  } else {
+    worksheet.mergeCells(`A2:${lastColLetter}2`);
+    worksheet.getCell("A2").value = classLabel;
+    worksheet.getCell("A2").font = { bold: true, size: 14 };
+    worksheet.getCell("A2").alignment = { horizontal: "center" };
+  }
 
   worksheet.addRow([]);
 

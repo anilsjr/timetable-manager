@@ -99,6 +99,7 @@ export default function AddScheduleModal({
   const labId = watch('labId');
   const day = watch('day');
   const startTime = watch('startTime');
+  const endTime = watch('endTime');
   const inchargeId = watch('teacherId');
 
   const isSubjectType = type === 'LECTURE';
@@ -212,7 +213,7 @@ export default function AddScheduleModal({
       return;
     }
     setTeachersLoading(true);
-    const params = { day, startTime };
+    const params = { day, startTime, endTime };
     if (editing?._id) params.excludeScheduleId = editing._id;
     teacherApi
       .getTeachersBySubject(subjectId, params)
@@ -222,7 +223,7 @@ export default function AddScheduleModal({
         setTeachersBySubject([]);
       })
       .finally(() => setTeachersLoading(false));
-  }, [subjectId, teacherEnabled, isSubjectType, day, startTime, editing, setValue]);
+  }, [subjectId, teacherEnabled, isSubjectType, day, startTime, endTime, editing, setValue]);
 
   useEffect(() => {
     if (!labId || !teacherEnabled || !isLabType) {
@@ -235,7 +236,7 @@ export default function AddScheduleModal({
       return;
     }
     setTeachersLoading(true);
-    const params = { day, startTime };
+    const params = { day, startTime, endTime };
     if (editing?._id) params.excludeScheduleId = editing._id;
     teacherApi
       .getTeachersByLab(labId, params)
@@ -245,7 +246,7 @@ export default function AddScheduleModal({
         setTeachersByLab([]);
       })
       .finally(() => setTeachersLoading(false));
-  }, [labId, teacherEnabled, isLabType, day, startTime, editing, setValue]);
+  }, [labId, teacherEnabled, isLabType, day, startTime, endTime, editing, setValue]);
 
   // Load lab assistant options (all lab teachers minus the selected in-charge)
   useEffect(() => {
@@ -255,7 +256,7 @@ export default function AddScheduleModal({
       return;
     }
     setAssistantLoading(true);
-    const params = { day, startTime };
+    const params = { day, startTime, endTime };
     if (editing?._id) params.excludeScheduleId = editing._id;
     teacherApi
       .getTeachersByLab(labId, params)
@@ -265,7 +266,7 @@ export default function AddScheduleModal({
       })
       .catch(() => setTeachersByLabAssistant([]))
       .finally(() => setAssistantLoading(false));
-  }, [labId, assistantEnabled, inchargeId, day, startTime, editing, setValue]);
+  }, [labId, assistantEnabled, inchargeId, day, startTime, endTime, editing, setValue]);
 
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);

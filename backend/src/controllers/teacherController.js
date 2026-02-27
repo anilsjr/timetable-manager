@@ -21,10 +21,11 @@ export const getById = async (req, res, next) => {
 
 export const getTeachersBySubject = async (req, res, next) => {
   try {
-    const { day, startTime, excludeScheduleId } = req.query;
+    const { day, startTime, endTime, excludeScheduleId } = req.query;
     const teachers = await teacherService.getTeachersBySubject(req.params.subjectId, {
       day: day || undefined,
       startTime: startTime || undefined,
+      endTime: endTime || undefined,
       excludeScheduleId: excludeScheduleId || undefined,
     });
     res.json({ success: true, data: teachers });
@@ -35,10 +36,11 @@ export const getTeachersBySubject = async (req, res, next) => {
 
 export const getTeachersByLab = async (req, res, next) => {
   try {
-    const { day, startTime, excludeScheduleId } = req.query;
+    const { day, startTime, endTime, excludeScheduleId } = req.query;
     const teachers = await teacherService.getTeachersByLab(req.params.labId, {
       day: day || undefined,
       startTime: startTime || undefined,
+      endTime: endTime || undefined,
       excludeScheduleId: excludeScheduleId || undefined,
     });
     res.json({ success: true, data: teachers });

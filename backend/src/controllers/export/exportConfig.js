@@ -27,7 +27,7 @@ export const dayLabels = {
 
 // Helper function to get class timetable data
 export async function getClassTimetableData(classId) {
-  const classData = await Class.findById(classId);
+  const classData = await Class.findById(classId).populate('room', 'code type');
   if (!classData) {
     throw new Error('Class not found');
   }

@@ -29,7 +29,7 @@ export const createSchedule = [
       if (!b.classId && !b.class) throw new Error('Class is required');
       if (b.type === 'LAB') {
         if (!b.room) throw new Error('Lab is required');
-        if (b.roomModel !== 'Lab') throw new Error('roomModel must be Lab for lab schedule');
+        if (b.roomModel && !['Lab', 'Room'].includes(b.roomModel)) throw new Error('roomModel must be Lab or Room for lab schedule');
       } else {
         if (!b.subjectId && !b.subject) throw new Error('Subject is required');
         if (!b.teacherId && !b.teacher) throw new Error('Teacher is required');

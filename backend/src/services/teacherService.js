@@ -9,22 +9,45 @@ function formatTimeLocal(d) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+function timeStrToMinutes(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function dateToMinutes(d) {
+  const date = d instanceof Date ? d : new Date(d);
+  return date.getHours() * 60 + date.getMinutes();
+}
+
+function minutesOverlap(start1, end1, start2, end2) {
+  return start1 < end2 && end1 > start2;
+}
+
 /**
- * Returns teacher IDs that are already assigned at the given day + startTime.
- * When excludeScheduleId is set (e.g. when editing), that schedule's teacher is not counted as busy.
+ * Returns teacher IDs that are busy (overlap with the given time range) on the given day.
+ * Checks both teacher (In-Charge) and lab_assistant fields.
+ * When excludeScheduleId is set the excluded schedule is ignored.
  */
-export async function getBusyTeacherIdsAtSlot(day, startTime, excludeScheduleId = null) {
+export async function getBusyTeacherIdsAtSlot(day, startTime, excludeScheduleId = null, endTime = null) {
+  // Calculate end time: if not provided, assume a 50-min lecture slot
+  const startMin = timeStrToMinutes(startTime);
+  const endMin = endTime ? timeStrToMinutes(endTime) : startMin + 50;
+
   const schedules = await Schedule.find({ day_of_week: day })
-    .select('teacher start_time _id')
+    .select('teacher lab_assistant start_time end_time _id')
     .lean();
-  const busy = schedules.filter((s) => {
-    if (!s.teacher) return false;
-    const timeStr = formatTimeLocal(s.start_time);
-    if (timeStr !== startTime) return false;
-    if (excludeScheduleId && s._id.toString() === excludeScheduleId.toString()) return false;
-    return true;
+
+  const busyIds = new Set();
+  schedules.forEach((s) => {
+    if (excludeScheduleId && s._id.toString() === excludeScheduleId.toString()) return;
+    const sStart = dateToMinutes(s.start_time);
+    const sEnd = dateToMinutes(s.end_time);
+    if (!minutesOverlap(startMin, endMin, sStart, sEnd)) return;
+    if (s.teacher) busyIds.add(s.teacher.toString());
+    if (s.lab_assistant) busyIds.add(s.lab_assistant.toString());
   });
-  return [...new Set(busy.map((s) => s.teacher.toString()))];
+
+  return [...busyIds];
 }
 
 export const listTeachers = async ({ page = 1, limit = 10, search = '' }) => {
@@ -52,7 +75,7 @@ export const getTeacherById = async (id) => {
 };
 
 export const getTeachersBySubject = async (subjectId, options = {}) => {
-  const { day, startTime, excludeScheduleId } = options;
+  const { day, startTime, endTime, excludeScheduleId } = options;
   let data = await Teacher.find({ subjects: subjectId })
     .populate('subjects', 'full_name short_name code')
     .populate('labs', 'name short_name code')
@@ -60,7 +83,7 @@ export const getTeachersBySubject = async (subjectId, options = {}) => {
     .lean();
 
   if (day && startTime) {
-    const busyIds = await getBusyTeacherIdsAtSlot(day, startTime, excludeScheduleId);
+    const busyIds = await getBusyTeacherIdsAtSlot(day, startTime, excludeScheduleId, endTime);
     if (busyIds.length) {
       data = data.filter((t) => !busyIds.includes(t._id.toString()));
     }
@@ -70,7 +93,7 @@ export const getTeachersBySubject = async (subjectId, options = {}) => {
 };
 
 export const getTeachersByLab = async (labId, options = {}) => {
-  const { day, startTime, excludeScheduleId } = options;
+  const { day, startTime, endTime, excludeScheduleId } = options;
   let data = await Teacher.find({ labs: labId })
     .populate('subjects', 'full_name short_name code')
     .populate('labs', 'name short_name code')
@@ -78,7 +101,7 @@ export const getTeachersByLab = async (labId, options = {}) => {
     .lean();
 
   if (day && startTime) {
-    const busyIds = await getBusyTeacherIdsAtSlot(day, startTime, excludeScheduleId);
+    const busyIds = await getBusyTeacherIdsAtSlot(day, startTime, excludeScheduleId, endTime);
     if (busyIds.length) {
       data = data.filter((t) => !busyIds.includes(t._id.toString()));
     }

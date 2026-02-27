@@ -10,6 +10,7 @@ export const getTeachersBySubject = (subjectId, params = {}) => {
   const query = {};
   if (params.day) query.day = params.day;
   if (params.startTime) query.startTime = params.startTime;
+  if (params.endTime) query.endTime = params.endTime;
   if (params.excludeScheduleId) query.excludeScheduleId = params.excludeScheduleId;
   return api
     .get(`/api/teachers/by-subject/${subjectId}`, { params: query })
@@ -20,6 +21,7 @@ export const getTeachersByLab = (labId, params = {}) => {
   const query = {};
   if (params.day) query.day = params.day;
   if (params.startTime) query.startTime = params.startTime;
+  if (params.endTime) query.endTime = params.endTime;
   if (params.excludeScheduleId) query.excludeScheduleId = params.excludeScheduleId;
   return api
     .get(`/api/teachers/by-lab/${labId}`, { params: query })

@@ -3,9 +3,32 @@ import { timeSlots, days, dayLabels } from './exportConfig.js';
 
 // Render a single class timetable page on a PDFDocument
 function renderPDFPage(doc, classData) {
+  // Compute class room code visibility
+  const classRoomCode = classData.class.room?.code || null;
+  const showClassRoom = classRoomCode
+    ? Object.values(classData.timetable).some(daySchedule =>
+        Object.values(daySchedule).some(cell =>
+          cell && !cell.isLabContinuation && cell.room && cell.room !== 'N/A' && cell.room !== classRoomCode
+        )
+      )
+    : false;
+
   // Header
   doc.fontSize(16).font('Helvetica-Bold').text('IPS Academy Timetable Management', { align: 'center' });
-  doc.fontSize(14).text(`Class: ${classData.class.code || `${classData.class.class_name}-${classData.class.year}${classData.class.section}`}`, { align: 'center' });
+  const classLineY = doc.y;
+  doc.fontSize(14).font('Helvetica-Bold').text(
+    `Class: ${classData.class.code || `${classData.class.class_name}-${classData.class.year}${classData.class.section}`}`,
+    { align: 'center' }
+  );
+  if (showClassRoom) {
+    const afterClassY = doc.y;
+    doc.fontSize(11).font('Helvetica-Bold').text(`Room: ${classRoomCode}`, 30, classLineY, {
+      align: 'right',
+      width: doc.page.width - 60,
+      lineBreak: false
+    });
+    doc.y = afterClassY;
+  }
   doc.moveDown();
 
   // Table setup
