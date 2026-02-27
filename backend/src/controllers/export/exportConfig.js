@@ -87,7 +87,7 @@ export async function getClassTimetableData(classId) {
 
     let subjectName, subjectCode, roomDisplay;
     if (isLab) {
-      subjectName = labData?.name || roomData?.name || 'N/A';
+      subjectName = labData?.short_name || labData?.name || roomData?.short_name || roomData?.name || 'N/A';
       subjectCode = labData?.code || roomData?.code || '';
       roomDisplay = roomData?.code || roomData?.name || 'N/A';
     } else {
