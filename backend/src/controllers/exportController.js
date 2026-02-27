@@ -154,6 +154,13 @@ async function generateExcel(classData) {
   headerRow.font = { bold: true };
   headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
 
+  // Find BREAK and LUNCH column indices
+  const breakSlotIdx = timeSlots.findIndex(s => s.start === 'BREAK');
+  const lunchSlotIdx = timeSlots.findIndex(s => s.start === 'LUNCH');
+  const breakColIdx = breakSlotIdx + 2; // +2 for Day column offset
+  const lunchColIdx = lunchSlotIdx + 2;
+  const headerRowNum = headerRow.number;
+
   // Add data
   days.forEach(day => {
     const rowData = [dayLabels[day]];
@@ -162,9 +169,9 @@ async function generateExcel(classData) {
       const cell = classData.timetable[day][slot.start];
       const colIndex = slotIndex + 2; // +2 because Day is col 1, slots start at col 2
       if (cell && cell.type === 'BREAK') {
-        rowData.push('BREAK');
+        rowData.push(''); // Will be vertically merged
       } else if (cell && cell.type === 'LUNCH') {
-        rowData.push('LUNCH');
+        rowData.push(''); // Will be vertically merged
       } else if (cell && cell.isLabContinuation) {
         rowData.push(''); // Empty - will be merged with lab cell
       } else if (cell && cell.type === 'LAB') {
@@ -189,15 +196,28 @@ async function generateExcel(classData) {
       worksheet.mergeCells(rowNumber, colIndex, rowNumber, colIndex + 1);
       row.getCell(colIndex).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
     });
-    
-    rowData.forEach((cellValue, index) => {
-      if (cellValue === 'BREAK') {
-        row.getCell(index + 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFA500' } };
-      } else if (cellValue === 'LUNCH') {
-        row.getCell(index + 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF90EE90' } };
-      }
-    });
   });
+
+  // Vertically merge BREAK column (header row through last data row)
+  const lastDataRow = headerRowNum + days.length;
+  if (breakSlotIdx >= 0) {
+    worksheet.mergeCells(headerRowNum, breakColIdx, lastDataRow, breakColIdx);
+    const breakCell = worksheet.getCell(headerRowNum, breakColIdx);
+    breakCell.value = 'SHORT BREAK';
+    breakCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFA500' } };
+    breakCell.alignment = { textRotation: 90, horizontal: 'center', vertical: 'middle' };
+    breakCell.font = { bold: true, size: 11 };
+  }
+
+  // Vertically merge LUNCH column (header row through last data row)
+  if (lunchSlotIdx >= 0) {
+    worksheet.mergeCells(headerRowNum, lunchColIdx, lastDataRow, lunchColIdx);
+    const lunchCell = worksheet.getCell(headerRowNum, lunchColIdx);
+    lunchCell.value = 'LUNCH BREAK';
+    lunchCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF90EE90' } };
+    lunchCell.alignment = { textRotation: 90, horizontal: 'center', vertical: 'middle' };
+    lunchCell.font = { bold: true, size: 11 };
+  }
 
   // Auto-fit columns
   worksheet.columns.forEach(column => {
@@ -245,12 +265,63 @@ async function generatePDF(classData) {
   doc.text('Day', currentX + 5, tableTop + 25, { width: columnWidth - 10, align: 'center' });
   currentX += columnWidth;
 
+  // Track BREAK and LUNCH column X positions for merged cells
+  let breakColX = null;
+  let lunchColX = null;
+
   // Time slot headers
   timeSlots.forEach(slot => {
+    if (slot.start === 'BREAK') {
+      breakColX = currentX;
+      currentX += columnWidth;
+      return; // Skip header — will draw merged cell later
+    }
+    if (slot.start === 'LUNCH') {
+      lunchColX = currentX;
+      currentX += columnWidth;
+      return; // Skip header — will draw merged cell later
+    }
     doc.rect(currentX, tableTop, columnWidth, rowHeight).stroke();
     doc.text(slot.label, currentX + 5, tableTop + 20, { width: columnWidth - 10, align: 'center' });
     currentX += columnWidth;
   });
+
+  const totalHeight = rowHeight + (days.length * rowHeight); // header + all day rows
+
+  // Draw merged BREAK column
+  if (breakColX !== null) {
+    doc.save();
+    doc.fillColor('#FFA500').rect(breakColX, tableTop, columnWidth, totalHeight).fill();
+    doc.rect(breakColX, tableTop, columnWidth, totalHeight).stroke();
+    doc.fillColor('#000000');
+    doc.fontSize(10).font('Helvetica-Bold');
+    // Rotate text 90 degrees for vertical label
+    const centerX = breakColX + columnWidth / 2;
+    const centerY = tableTop + totalHeight / 2;
+    doc.save();
+    doc.translate(centerX, centerY);
+    doc.rotate(-90);
+    doc.text('SHORT BREAK', -40, -6, { width: 80, align: 'center' });
+    doc.restore();
+    doc.restore();
+  }
+
+  // Draw merged LUNCH column
+  if (lunchColX !== null) {
+    doc.save();
+    doc.fillColor('#90EE90').rect(lunchColX, tableTop, columnWidth, totalHeight).fill();
+    doc.rect(lunchColX, tableTop, columnWidth, totalHeight).stroke();
+    doc.fillColor('#000000');
+    doc.fontSize(10).font('Helvetica-Bold');
+    const centerX = lunchColX + columnWidth / 2;
+    const centerY = tableTop + totalHeight / 2;
+    doc.save();
+    doc.translate(centerX, centerY);
+    doc.rotate(-90);
+    doc.text('LUNCH BREAK', -40, -6, { width: 80, align: 'center' });
+    doc.restore();
+    doc.restore();
+  }
 
   // Draw data rows
   let currentY = tableTop + rowHeight;
@@ -265,6 +336,12 @@ async function generatePDF(classData) {
 
     // Time slot columns
     timeSlots.forEach(slot => {
+      // Skip BREAK and LUNCH — already drawn as merged columns
+      if (slot.start === 'BREAK' || slot.start === 'LUNCH') {
+        currentX += columnWidth;
+        return;
+      }
+
       const cell = classData.timetable[day][slot.start];
       doc.fontSize(8).font('Helvetica');
 
@@ -279,13 +356,7 @@ async function generatePDF(classData) {
 
       doc.rect(currentX, currentY, cellWidth, rowHeight).stroke();
       
-      if (cell && cell.type === 'BREAK') {
-        doc.fillColor('#FFA500').rect(currentX, currentY, cellWidth, rowHeight).fill();
-        doc.fillColor('#000000').text('BREAK', currentX + 5, currentY + 25, { width: cellWidth - 10, align: 'center' });
-      } else if (cell && cell.type === 'LUNCH') {
-        doc.fillColor('#90EE90').rect(currentX, currentY, cellWidth, rowHeight).fill();
-        doc.fillColor('#000000').text('LUNCH', currentX + 5, currentY + 25, { width: cellWidth - 10, align: 'center' });
-      } else if (isLab) {
+      if (isLab) {
         doc.fillColor('#000000');
         const teacherDisplay = cell.teacherAbbr || cell.teacher;
         const labLine = teacherDisplay && teacherDisplay !== 'N/A'
@@ -540,6 +611,13 @@ export async function exportBulkTimetables(req, res) {
         headerRow.font = { bold: true };
         headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE0E0E0' } };
 
+        // Find BREAK and LUNCH column indices
+        const breakSlotIdx = timeSlots.findIndex(s => s.start === 'BREAK');
+        const lunchSlotIdx = timeSlots.findIndex(s => s.start === 'LUNCH');
+        const breakColIdx = breakSlotIdx + 2;
+        const lunchColIdx = lunchSlotIdx + 2;
+        const headerRowNum = headerRow.number;
+
         // Add data
         days.forEach(day => {
           const rowData = [dayLabels[day]];
@@ -548,9 +626,9 @@ export async function exportBulkTimetables(req, res) {
             const cell = classData.timetable[day][slot.start];
             const colIndex = slotIndex + 2; // +2 because Day is col 1, slots start at col 2
             if (cell && cell.type === 'BREAK') {
-              rowData.push('BREAK');
+              rowData.push(''); // Will be vertically merged
             } else if (cell && cell.type === 'LUNCH') {
-              rowData.push('LUNCH');
+              rowData.push(''); // Will be vertically merged
             } else if (cell && cell.isLabContinuation) {
               rowData.push(''); // Empty - will be merged with lab cell
             } else if (cell && cell.type === 'LAB') {
@@ -575,15 +653,28 @@ export async function exportBulkTimetables(req, res) {
             worksheet.mergeCells(rowNumber, colIndex, rowNumber, colIndex + 1);
             row.getCell(colIndex).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
           });
-          
-          rowData.forEach((cellValue, index) => {
-            if (cellValue === 'BREAK') {
-              row.getCell(index + 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFA500' } };
-            } else if (cellValue === 'LUNCH') {
-              row.getCell(index + 1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF90EE90' } };
-            }
-          });
         });
+
+        // Vertically merge BREAK column (header row through last data row)
+        const lastDataRow = headerRowNum + days.length;
+        if (breakSlotIdx >= 0) {
+          worksheet.mergeCells(headerRowNum, breakColIdx, lastDataRow, breakColIdx);
+          const breakCell = worksheet.getCell(headerRowNum, breakColIdx);
+          breakCell.value = 'SHORT BREAK';
+          breakCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFA500' } };
+          breakCell.alignment = { textRotation: 90, horizontal: 'center', vertical: 'middle' };
+          breakCell.font = { bold: true, size: 11 };
+        }
+
+        // Vertically merge LUNCH column (header row through last data row)
+        if (lunchSlotIdx >= 0) {
+          worksheet.mergeCells(headerRowNum, lunchColIdx, lastDataRow, lunchColIdx);
+          const lunchCell = worksheet.getCell(headerRowNum, lunchColIdx);
+          lunchCell.value = 'LUNCH BREAK';
+          lunchCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF90EE90' } };
+          lunchCell.alignment = { textRotation: 90, horizontal: 'center', vertical: 'middle' };
+          lunchCell.font = { bold: true, size: 11 };
+        }
 
         // Auto-fit columns
         worksheet.columns.forEach(column => {
@@ -652,11 +743,61 @@ export async function exportBulkTimetables(req, res) {
         doc.text('Day', currentX + 5, tableTop + 25, { width: columnWidth - 10, align: 'center' });
         currentX += columnWidth;
 
+        // Track BREAK and LUNCH column X positions for merged cells
+        let breakColX = null;
+        let lunchColX = null;
+
         timeSlots.forEach(slot => {
+          if (slot.start === 'BREAK') {
+            breakColX = currentX;
+            currentX += columnWidth;
+            return;
+          }
+          if (slot.start === 'LUNCH') {
+            lunchColX = currentX;
+            currentX += columnWidth;
+            return;
+          }
           doc.rect(currentX, tableTop, columnWidth, rowHeight).stroke();
           doc.text(slot.label, currentX + 5, tableTop + 20, { width: columnWidth - 10, align: 'center' });
           currentX += columnWidth;
         });
+
+        const totalHeight = rowHeight + (days.length * rowHeight);
+
+        // Draw merged BREAK column
+        if (breakColX !== null) {
+          doc.save();
+          doc.fillColor('#FFA500').rect(breakColX, tableTop, columnWidth, totalHeight).fill();
+          doc.rect(breakColX, tableTop, columnWidth, totalHeight).stroke();
+          doc.fillColor('#000000');
+          doc.fontSize(10).font('Helvetica-Bold');
+          const centerX = breakColX + columnWidth / 2;
+          const centerY = tableTop + totalHeight / 2;
+          doc.save();
+          doc.translate(centerX, centerY);
+          doc.rotate(-90);
+          doc.text('SHORT BREAK', -40, -6, { width: 80, align: 'center' });
+          doc.restore();
+          doc.restore();
+        }
+
+        // Draw merged LUNCH column
+        if (lunchColX !== null) {
+          doc.save();
+          doc.fillColor('#90EE90').rect(lunchColX, tableTop, columnWidth, totalHeight).fill();
+          doc.rect(lunchColX, tableTop, columnWidth, totalHeight).stroke();
+          doc.fillColor('#000000');
+          doc.fontSize(10).font('Helvetica-Bold');
+          const centerX = lunchColX + columnWidth / 2;
+          const centerY = tableTop + totalHeight / 2;
+          doc.save();
+          doc.translate(centerX, centerY);
+          doc.rotate(-90);
+          doc.text('LUNCH BREAK', -40, -6, { width: 80, align: 'center' });
+          doc.restore();
+          doc.restore();
+        }
 
         // Draw data rows
         let currentY = tableTop + rowHeight;
@@ -669,6 +810,12 @@ export async function exportBulkTimetables(req, res) {
           currentX += columnWidth;
 
           timeSlots.forEach(slot => {
+            // Skip BREAK and LUNCH — already drawn as merged columns
+            if (slot.start === 'BREAK' || slot.start === 'LUNCH') {
+              currentX += columnWidth;
+              return;
+            }
+
             const cell = classData.timetable[day][slot.start];
             doc.fontSize(8).font('Helvetica');
 
@@ -683,13 +830,7 @@ export async function exportBulkTimetables(req, res) {
 
             doc.rect(currentX, currentY, cellWidth, rowHeight).stroke();
             
-            if (cell && cell.type === 'BREAK') {
-              doc.fillColor('#FFA500').rect(currentX, currentY, cellWidth, rowHeight).fill();
-              doc.fillColor('#000000').text('BREAK', currentX + 5, currentY + 25, { width: cellWidth - 10, align: 'center' });
-            } else if (cell && cell.type === 'LUNCH') {
-              doc.fillColor('#90EE90').rect(currentX, currentY, cellWidth, rowHeight).fill();
-              doc.fillColor('#000000').text('LUNCH', currentX + 5, currentY + 25, { width: cellWidth - 10, align: 'center' });
-            } else if (isLab) {
+            if (isLab) {
               doc.fillColor('#000000');
               const teacherDisplay = cell.teacherAbbr || cell.teacher;
               const labLine = teacherDisplay && teacherDisplay !== 'N/A'
