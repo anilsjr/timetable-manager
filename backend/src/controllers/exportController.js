@@ -157,27 +157,38 @@ async function generateExcel(classData) {
   // Add data
   days.forEach(day => {
     const rowData = [dayLabels[day]];
-    timeSlots.forEach(slot => {
+    const labMerges = []; // Track columns to merge for labs
+    timeSlots.forEach((slot, slotIndex) => {
       const cell = classData.timetable[day][slot.start];
+      const colIndex = slotIndex + 2; // +2 because Day is col 1, slots start at col 2
       if (cell && cell.type === 'BREAK') {
         rowData.push('BREAK');
       } else if (cell && cell.type === 'LUNCH') {
         rowData.push('LUNCH');
       } else if (cell && cell.isLabContinuation) {
-        rowData.push('↑ (cont.)');
+        rowData.push(''); // Empty - will be merged with lab cell
       } else if (cell && cell.type === 'LAB') {
         const teacherDisplay = cell.teacherAbbr || cell.teacher;
         const line = teacherDisplay && teacherDisplay !== 'N/A'
           ? `${cell.subject} (${teacherDisplay})\n${cell.room}`
           : `${cell.subject}\n${cell.room}`;
         rowData.push(line);
+        labMerges.push(colIndex);
       } else if (cell) {
-        rowData.push(`${cell.subject}\n${cell.teacher}\n${cell.room}`);
+        const teacherCode = cell.teacherAbbr || cell.teacher;
+        rowData.push(`${cell.subject}\n${teacherCode}\n${cell.room}`);
       } else {
         rowData.push('');
       }
     });
     const row = worksheet.addRow(rowData);
+
+    // Merge lab cells spanning 2 slots
+    labMerges.forEach(colIndex => {
+      const rowNumber = row.number;
+      worksheet.mergeCells(rowNumber, colIndex, rowNumber, colIndex + 1);
+      row.getCell(colIndex).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+    });
     
     rowData.forEach((cellValue, index) => {
       if (cellValue === 'BREAK') {
@@ -254,32 +265,39 @@ async function generatePDF(classData) {
 
     // Time slot columns
     timeSlots.forEach(slot => {
-      doc.rect(currentX, currentY, columnWidth, rowHeight).stroke();
-      
       const cell = classData.timetable[day][slot.start];
       doc.fontSize(8).font('Helvetica');
+
+      // Skip continuation cells - already covered by merged lab cell
+      if (cell && cell.isLabContinuation) {
+        currentX += columnWidth;
+        return;
+      }
+
+      const isLab = cell && cell.type === 'LAB' && cell.durationSlots === 2;
+      const cellWidth = isLab ? columnWidth * 2 : columnWidth;
+
+      doc.rect(currentX, currentY, cellWidth, rowHeight).stroke();
       
       if (cell && cell.type === 'BREAK') {
-        doc.fillColor('#FFA500').rect(currentX, currentY, columnWidth, rowHeight).fill();
-        doc.fillColor('#000000').text('BREAK', currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
+        doc.fillColor('#FFA500').rect(currentX, currentY, cellWidth, rowHeight).fill();
+        doc.fillColor('#000000').text('BREAK', currentX + 5, currentY + 25, { width: cellWidth - 10, align: 'center' });
       } else if (cell && cell.type === 'LUNCH') {
-        doc.fillColor('#90EE90').rect(currentX, currentY, columnWidth, rowHeight).fill();
-        doc.fillColor('#000000').text('LUNCH', currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
-      } else if (cell && cell.isLabContinuation) {
-        doc.fillColor('#000000');
-        doc.text('(cont.)', currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
-      } else if (cell && cell.type === 'LAB') {
+        doc.fillColor('#90EE90').rect(currentX, currentY, cellWidth, rowHeight).fill();
+        doc.fillColor('#000000').text('LUNCH', currentX + 5, currentY + 25, { width: cellWidth - 10, align: 'center' });
+      } else if (isLab) {
         doc.fillColor('#000000');
         const teacherDisplay = cell.teacherAbbr || cell.teacher;
         const labLine = teacherDisplay && teacherDisplay !== 'N/A'
           ? `${cell.subject} (${teacherDisplay})`
           : cell.subject;
         const cellText = `${labLine}\n${cell.room}`;
-        doc.text(cellText, currentX + 5, currentY + 15, { width: columnWidth - 10, align: 'center' });
+        doc.text(cellText, currentX + 5, currentY + 15, { width: cellWidth - 10, align: 'center' });
       } else if (cell) {
         doc.fillColor('#000000');
-        const cellText = `${cell.subject}\n${cell.teacher}\n${cell.room}`;
-        doc.text(cellText, currentX + 5, currentY + 10, { width: columnWidth - 10, align: 'center' });
+        const teacherCode = cell.teacherAbbr || cell.teacher;
+        const cellText = `${cell.subject}\n${teacherCode}\n${cell.room}`;
+        doc.text(cellText, currentX + 5, currentY + 10, { width: cellWidth - 10, align: 'center' });
       }
       
       currentX += columnWidth;
@@ -295,60 +313,127 @@ async function generatePDF(classData) {
   return doc;
 }
 
-// Generate JSON export
+// Generate JSON export (v2.0 normalized format)
 function generateJSON(classData) {
+  const regularSlots = timeSlots.filter(s => s.start !== 'BREAK' && s.start !== 'LUNCH');
+
+  // Build period ID map: start time -> period id
+  const periodMap = {};
+  regularSlots.forEach((slot, i) => {
+    const id = `P${i + 1}`;
+    periodMap[slot.start] = id;
+  });
+
+  // Collect unique teachers and subjects from the timetable grid
+  const teachers = {};
+  const subjects = {};
+
+  Object.values(classData.timetable).forEach(daySchedule => {
+    Object.values(daySchedule).forEach(cell => {
+      if (!cell || cell.type === 'BREAK' || cell.type === 'LUNCH' || cell.isLabContinuation) return;
+      if (!cell.subject) return;
+
+      // Collect subject
+      const subCode = cell.subjectCode;
+      if (subCode && !subjects[subCode]) {
+        subjects[subCode] = {
+          name: cell.subject,
+          type: cell.type === 'LAB' ? 'LAB' : 'LECTURE'
+        };
+      }
+
+      // Collect teacher
+      const abbr = cell.teacherAbbr;
+      if (abbr && cell.teacher && cell.teacher !== 'N/A' && !teachers[abbr]) {
+        teachers[abbr] = { name: cell.teacher };
+      }
+    });
+  });
+
+  // Build periods array
+  const periods = regularSlots.map((slot, i) => ({
+    id: `P${i + 1}`,
+    start: slot.start,
+    end: slot.end
+  }));
+
+  // Build breaks array by detecting BREAK/LUNCH positions
+  const breaks = [];
+  timeSlots.forEach((slot, i) => {
+    if (slot.start === 'BREAK' || slot.start === 'LUNCH') {
+      // Find the period just before this break
+      const prevSlot = timeSlots[i - 1];
+      const nextSlot = timeSlots[i + 1];
+      if (prevSlot && nextSlot && prevSlot.start !== 'BREAK' && prevSlot.start !== 'LUNCH') {
+        const prevPeriodId = periodMap[prevSlot.start];
+        // Calculate duration in minutes
+        const [endH, endM] = prevSlot.end.split(':').map(Number);
+        const [startH, startM] = nextSlot.start.split(':').map(Number);
+        const duration = (startH * 60 + startM) - (endH * 60 + endM);
+        breaks.push({
+          after: prevPeriodId,
+          duration,
+          label: slot.start === 'LUNCH' ? 'Lunch' : 'Break'
+        });
+      }
+    }
+  });
+
+  // Build timetable: day code -> array of entries
+  const timetable = {};
+  days.forEach(dayCode => {
+    const daySchedule = classData.timetable[dayCode];
+    const entries = [];
+
+    Object.entries(daySchedule).forEach(([slotTime, cell]) => {
+      if (!cell || cell.type === 'BREAK' || cell.type === 'LUNCH' || cell.isLabContinuation) return;
+      if (!cell.subject) return;
+
+      const startPeriod = periodMap[slotTime];
+      if (!startPeriod) return;
+
+      const periodsList = [startPeriod];
+
+      // If lab with 2 slots, add the next period
+      if (cell.type === 'LAB' && cell.durationSlots === 2) {
+        const startIdx = regularSlots.findIndex(s => s.start === slotTime);
+        if (startIdx >= 0 && startIdx + 1 < regularSlots.length) {
+          periodsList.push(`P${startIdx + 2}`);
+        }
+      }
+
+      const teacherAbbr = cell.teacherAbbr && cell.teacher !== 'N/A' ? cell.teacherAbbr : null;
+      const room = cell.room && cell.room !== 'N/A' ? cell.room : null;
+
+      entries.push({
+        periods: periodsList,
+        subject: cell.subjectCode || null,
+        teacher: teacherAbbr,
+        room
+      });
+    });
+
+    timetable[dayCode] = entries;
+  });
+
   return {
-    institute: 'IPS Academy Timetable Management',
-    exportDate: new Date().toISOString(),
+    meta: {
+      institute: 'IPS Academy Timetable Management',
+      exportedAt: new Date().toISOString(),
+      version: '2.0'
+    },
     class: {
       id: classData.class._id,
       code: classData.class.code,
       name: classData.class.class_name,
       year: classData.class.year,
-      section: classData.class.section,
-      displayName: classData.class.code || `${classData.class.class_name}-${classData.class.year}${classData.class.section}`
+      section: classData.class.section
     },
-    timeSlots: timeSlots.map(slot => ({
-      start: slot.start,
-      end: slot.end,
-      label: slot.label,
-      type: slot.start === 'BREAK' || slot.start === 'LUNCH' ? slot.start : 'SLOT'
-    })),
-    days: days.map(day => ({
-      code: day,
-      name: dayLabels[day]
-    })),
-    timetable: Object.entries(classData.timetable).map(([dayCode, daySchedule]) => ({
-      day: {
-        code: dayCode,
-        name: dayLabels[dayCode]
-      },
-      schedule: Object.entries(daySchedule)
-        .filter(([, data]) => !data?.isLabContinuation)
-        .map(([timeSlot, scheduleData]) => {
-          if (scheduleData && scheduleData.type === 'BREAK') {
-            return { timeSlot, type: 'BREAK', label: 'BREAK' };
-          }
-          if (scheduleData && scheduleData.type === 'LUNCH') {
-            return { timeSlot, type: 'LUNCH', label: 'LUNCH' };
-          }
-          if (scheduleData && scheduleData.subject) {
-            return {
-              timeSlot,
-              type: scheduleData.type || 'LECTURE',
-              subject: {
-                name: scheduleData.subject,
-                code: scheduleData.subjectCode
-              },
-              teacher: scheduleData.teacher,
-              teacherAbbr: scheduleData.teacherAbbr || '',
-              room: scheduleData.room,
-              durationSlots: scheduleData.durationSlots || 1
-            };
-          }
-          return { timeSlot, type: 'EMPTY', label: 'No Class' };
-        })
-    }))
+    teachers,
+    subjects,
+    periods,
+    breaks,
+    timetable
   };
 }
 
@@ -458,27 +543,38 @@ export async function exportBulkTimetables(req, res) {
         // Add data
         days.forEach(day => {
           const rowData = [dayLabels[day]];
-          timeSlots.forEach(slot => {
+          const labMerges = []; // Track columns to merge for labs
+          timeSlots.forEach((slot, slotIndex) => {
             const cell = classData.timetable[day][slot.start];
+            const colIndex = slotIndex + 2; // +2 because Day is col 1, slots start at col 2
             if (cell && cell.type === 'BREAK') {
               rowData.push('BREAK');
             } else if (cell && cell.type === 'LUNCH') {
               rowData.push('LUNCH');
             } else if (cell && cell.isLabContinuation) {
-              rowData.push('↑ (cont.)');
+              rowData.push(''); // Empty - will be merged with lab cell
             } else if (cell && cell.type === 'LAB') {
               const teacherDisplay = cell.teacherAbbr || cell.teacher;
               const line = teacherDisplay && teacherDisplay !== 'N/A'
                 ? `${cell.subject} (${teacherDisplay})\n${cell.room}`
                 : `${cell.subject}\n${cell.room}`;
               rowData.push(line);
+              labMerges.push(colIndex);
             } else if (cell) {
-              rowData.push(`${cell.subject}\n${cell.teacher}\n${cell.room}`);
+              const teacherCode = cell.teacherAbbr || cell.teacher;
+              rowData.push(`${cell.subject}\n${teacherCode}\n${cell.room}`);
             } else {
               rowData.push('');
             }
           });
           const row = worksheet.addRow(rowData);
+
+          // Merge lab cells spanning 2 slots
+          labMerges.forEach(colIndex => {
+            const rowNumber = row.number;
+            worksheet.mergeCells(rowNumber, colIndex, rowNumber, colIndex + 1);
+            row.getCell(colIndex).alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+          });
           
           rowData.forEach((cellValue, index) => {
             if (cellValue === 'BREAK') {
@@ -573,32 +669,39 @@ export async function exportBulkTimetables(req, res) {
           currentX += columnWidth;
 
           timeSlots.forEach(slot => {
-            doc.rect(currentX, currentY, columnWidth, rowHeight).stroke();
-            
             const cell = classData.timetable[day][slot.start];
             doc.fontSize(8).font('Helvetica');
+
+            // Skip continuation cells - already covered by merged lab cell
+            if (cell && cell.isLabContinuation) {
+              currentX += columnWidth;
+              return;
+            }
+
+            const isLab = cell && cell.type === 'LAB' && cell.durationSlots === 2;
+            const cellWidth = isLab ? columnWidth * 2 : columnWidth;
+
+            doc.rect(currentX, currentY, cellWidth, rowHeight).stroke();
             
             if (cell && cell.type === 'BREAK') {
-              doc.fillColor('#FFA500').rect(currentX, currentY, columnWidth, rowHeight).fill();
-              doc.fillColor('#000000').text('BREAK', currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
+              doc.fillColor('#FFA500').rect(currentX, currentY, cellWidth, rowHeight).fill();
+              doc.fillColor('#000000').text('BREAK', currentX + 5, currentY + 25, { width: cellWidth - 10, align: 'center' });
             } else if (cell && cell.type === 'LUNCH') {
-              doc.fillColor('#90EE90').rect(currentX, currentY, columnWidth, rowHeight).fill();
-              doc.fillColor('#000000').text('LUNCH', currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
-            } else if (cell && cell.isLabContinuation) {
-              doc.fillColor('#000000');
-              doc.text('(cont.)', currentX + 5, currentY + 25, { width: columnWidth - 10, align: 'center' });
-            } else if (cell && cell.type === 'LAB') {
+              doc.fillColor('#90EE90').rect(currentX, currentY, cellWidth, rowHeight).fill();
+              doc.fillColor('#000000').text('LUNCH', currentX + 5, currentY + 25, { width: cellWidth - 10, align: 'center' });
+            } else if (isLab) {
               doc.fillColor('#000000');
               const teacherDisplay = cell.teacherAbbr || cell.teacher;
               const labLine = teacherDisplay && teacherDisplay !== 'N/A'
                 ? `${cell.subject} (${teacherDisplay})`
                 : cell.subject;
               const cellText = `${labLine}\n${cell.room}`;
-              doc.text(cellText, currentX + 5, currentY + 15, { width: columnWidth - 10, align: 'center' });
+              doc.text(cellText, currentX + 5, currentY + 15, { width: cellWidth - 10, align: 'center' });
             } else if (cell) {
               doc.fillColor('#000000');
-              const cellText = `${cell.subject}\n${cell.teacher}\n${cell.room}`;
-              doc.text(cellText, currentX + 5, currentY + 10, { width: columnWidth - 10, align: 'center' });
+              const teacherCode = cell.teacherAbbr || cell.teacher;
+              const cellText = `${cell.subject}\n${teacherCode}\n${cell.room}`;
+              doc.text(cellText, currentX + 5, currentY + 10, { width: cellWidth - 10, align: 'center' });
             }
             
             currentX += columnWidth;
