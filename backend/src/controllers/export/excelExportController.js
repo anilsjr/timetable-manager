@@ -85,11 +85,12 @@ export async function generateExcel(classData) {
     });
   });
 
-  // Vertically merge BREAK column (header row through last data row)
+  // Vertically merge BREAK column (data rows only, not header)
+  const firstDataRow = headerRowNum + 1;
   const lastDataRow = headerRowNum + days.length;
   if (breakSlotIdx >= 0) {
-    worksheet.mergeCells(headerRowNum, breakColIdx, lastDataRow, breakColIdx);
-    const breakCell = worksheet.getCell(headerRowNum, breakColIdx);
+    worksheet.mergeCells(firstDataRow, breakColIdx, lastDataRow, breakColIdx);
+    const breakCell = worksheet.getCell(firstDataRow, breakColIdx);
     breakCell.value = "BREAK";
     breakCell.fill = {
       type: "pattern",
@@ -104,10 +105,10 @@ export async function generateExcel(classData) {
     breakCell.font = { bold: true, size: 11 };
   }
 
-  // Vertically merge LUNCH column (header row through last data row)
+  // Vertically merge LUNCH column (data rows only, not header)
   if (lunchSlotIdx >= 0) {
-    worksheet.mergeCells(headerRowNum, lunchColIdx, lastDataRow, lunchColIdx);
-    const lunchCell = worksheet.getCell(headerRowNum, lunchColIdx);
+    worksheet.mergeCells(firstDataRow, lunchColIdx, lastDataRow, lunchColIdx);
+    const lunchCell = worksheet.getCell(firstDataRow, lunchColIdx);
     lunchCell.value = "LUNCH";
     lunchCell.fill = {
       type: "pattern",
@@ -115,7 +116,7 @@ export async function generateExcel(classData) {
       fgColor: { argb: "FF90EE90" },
     };
     lunchCell.alignment = {
-      textRotation: 255, // 255 = Excel's "Vertical Text" stacked mode
+      textRotation: 255,
       horizontal: "center",
       vertical: "middle",
     };
@@ -219,11 +220,12 @@ export function populateExcelSheet(worksheet, classData) {
     });
   });
 
-  // Vertically merge BREAK column
+  // Vertically merge BREAK column (data rows only, not header)
+  const firstDataRow = headerRowNum + 1;
   const lastDataRow = headerRowNum + days.length;
   if (breakSlotIdx >= 0) {
-    worksheet.mergeCells(headerRowNum, breakColIdx, lastDataRow, breakColIdx);
-    const breakCell = worksheet.getCell(headerRowNum, breakColIdx);
+    worksheet.mergeCells(firstDataRow, breakColIdx, lastDataRow, breakColIdx);
+    const breakCell = worksheet.getCell(firstDataRow, breakColIdx);
     breakCell.value = "BREAK";
     breakCell.fill = {
       type: "pattern",
@@ -238,10 +240,10 @@ export function populateExcelSheet(worksheet, classData) {
     breakCell.font = { bold: true, size: 11 };
   }
 
-  // Vertically merge LUNCH column
+  // Vertically merge LUNCH column (data rows only, not header)
   if (lunchSlotIdx >= 0) {
-    worksheet.mergeCells(headerRowNum, lunchColIdx, lastDataRow, lunchColIdx);
-    const lunchCell = worksheet.getCell(headerRowNum, lunchColIdx);
+    worksheet.mergeCells(firstDataRow, lunchColIdx, lastDataRow, lunchColIdx);
+    const lunchCell = worksheet.getCell(firstDataRow, lunchColIdx);
     lunchCell.value = "LUNCH";
     lunchCell.fill = {
       type: "pattern",

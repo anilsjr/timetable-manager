@@ -27,15 +27,21 @@ function renderPDFPage(doc, classData) {
   let breakColX = null;
   let lunchColX = null;
 
-  // Time slot headers
+  // Time slot headers (including BREAK and LUNCH header cells)
   timeSlots.forEach(slot => {
     if (slot.start === 'BREAK') {
       breakColX = currentX;
+      // Draw header cell for BREAK column
+      doc.rect(currentX, tableTop, columnWidth, rowHeight).stroke();
+      doc.text(slot.label, currentX + 5, tableTop + 25, { width: columnWidth - 10, align: 'center' });
       currentX += columnWidth;
       return;
     }
     if (slot.start === 'LUNCH') {
       lunchColX = currentX;
+      // Draw header cell for LUNCH column
+      doc.rect(currentX, tableTop, columnWidth, rowHeight).stroke();
+      doc.text(slot.label, currentX + 5, tableTop + 25, { width: columnWidth - 10, align: 'center' });
       currentX += columnWidth;
       return;
     }
@@ -44,17 +50,18 @@ function renderPDFPage(doc, classData) {
     currentX += columnWidth;
   });
 
-  const totalHeight = rowHeight + (days.length * rowHeight); // header + all day rows
+  const dataTop = tableTop + rowHeight; // start of data rows (below header)
+  const dataHeight = days.length * rowHeight; // data rows only
 
-  // Draw merged BREAK column
+  // Draw merged BREAK column (data rows only)
   if (breakColX !== null) {
     doc.save();
-    doc.fillColor('#FFA500').rect(breakColX, tableTop, columnWidth, totalHeight).fill();
-    doc.rect(breakColX, tableTop, columnWidth, totalHeight).stroke();
+    doc.fillColor('#FFA500').rect(breakColX, dataTop, columnWidth, dataHeight).fill();
+    doc.rect(breakColX, dataTop, columnWidth, dataHeight).stroke();
     doc.fillColor('#000000');
     doc.fontSize(10).font('Helvetica-Bold');
     const centerX = breakColX + columnWidth / 2;
-    const centerY = tableTop + totalHeight / 2;
+    const centerY = dataTop + dataHeight / 2;
     doc.save();
     doc.translate(centerX, centerY);
     doc.rotate(-90);
@@ -63,15 +70,15 @@ function renderPDFPage(doc, classData) {
     doc.restore();
   }
 
-  // Draw merged LUNCH column
+  // Draw merged LUNCH column (data rows only)
   if (lunchColX !== null) {
     doc.save();
-    doc.fillColor('#90EE90').rect(lunchColX, tableTop, columnWidth, totalHeight).fill();
-    doc.rect(lunchColX, tableTop, columnWidth, totalHeight).stroke();
+    doc.fillColor('#90EE90').rect(lunchColX, dataTop, columnWidth, dataHeight).fill();
+    doc.rect(lunchColX, dataTop, columnWidth, dataHeight).stroke();
     doc.fillColor('#000000');
     doc.fontSize(10).font('Helvetica-Bold');
     const centerX = lunchColX + columnWidth / 2;
-    const centerY = tableTop + totalHeight / 2;
+    const centerY = dataTop + dataHeight / 2;
     doc.save();
     doc.translate(centerX, centerY);
     doc.rotate(-90);
